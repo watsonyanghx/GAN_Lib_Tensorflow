@@ -12,7 +12,7 @@ The image generated:
 
 ![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/img/samples_99999.png)
 
-There are 10 columns with each corresponding to one label, in same column, only the random noise is different.
+There are 10 columns with each corresponding to one label, in the same column, **only** the random noise is different.
 
 
 The inception_50k curve:
@@ -35,7 +35,9 @@ The discriminator loss curve:
 ![d_cost](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/img/d_cost.jpg)
 
 
-The best inception_50k is : `8.432400703430176 ± 0.1185135617852211`, the inception score may be improved by tuning hyperparameters or continuing training.
+### Inception Score
+
+The **best inception_50k** is : `8.432400703430176 ± 0.1185135617852211`, the inception score may be improved by tuning hyperparameters or continuing training.
 
 
 **Note:**
@@ -47,9 +49,9 @@ The best inception_50k is : `8.432400703430176 ± 0.1185135617852211`, the incep
 
 ### Prerequisite
 
-1. Install TensorFlow 1.5.
-2. Numpy.
-3. Scipy.
+1. Install TensorFlow 1.5
+2. Numpy
+3. Scipy
 
 
 ### How to run:
@@ -74,14 +76,14 @@ You can use the pretrained model to generate images, or you can use this as init
 
 ### Other issue
 
-Since this is **Conditional** generation, the label information is introdeced by [Conditional Batch Normalization]() in `Generator` and concatenating label information with intermediate feature map in `Discriminator` (See [code]() in `Discriminator` for clarification).
+Since this is **Conditional** generation, the label information is introdeced by [Conditional Batch Normalization]() in `Generator` and concatenating label information with intermediate feature map in `Discriminator` (See [code](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/gan_cifar_resnet.py#L283) in `Discriminator` for clarification).
 
 I have tried concatenating label information with noise `z` in `Generator`, but the result is not good, see bellow for more details:
 
 
 - `Concatenate label information in G + Conditional Batch Norm in G` : use small learning rate (e.g. 0.0001) can convergece, but become slow.
 
-- `Concatenate label information in G + Batch Norm in G` : replace [Conditional Batch Normalization]() with [Batch Normalization](), the training is similar with above.
+- `Concatenate label information in G + Batch Norm in G` : replace [Conditional Batch Normalization]() with [Batch Normalization](http://proceedings.mlr.press/v37/ioffe15.pdf), the training is similar with above.
 
 
 I didn't tune hyperparameters, so the results may get better than I tried, with hyperparameter set properly.
