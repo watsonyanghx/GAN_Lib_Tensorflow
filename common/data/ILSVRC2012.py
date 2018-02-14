@@ -9,7 +9,7 @@ import os
 import glob
 import pickle
 
-from common.data import util
+import common.misc
 
 IMSIZE = 128
 LOAD_SIZE = IMSIZE
@@ -45,7 +45,7 @@ def save_data_list(input_dir, filepathes):
     bad_img = list()
     for filepath in filepathes:
         image_path = os.path.join(input_dir, filepath)
-        img, path = util.get_image(image_path, LOAD_SIZE, is_crop=False)
+        img, path = common.misc.get_image(image_path, LOAD_SIZE, is_crop=False)
         if img is None:
             bad_img.append(path)
             np.savetxt('../bad_img.txt', bad_img, fmt='%s', comments=None)
