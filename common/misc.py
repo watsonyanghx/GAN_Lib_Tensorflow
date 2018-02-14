@@ -1,14 +1,20 @@
-# from https://github.com/chainer/chainerrl/blob/f119a1fe210dd31ea123d244258d9b5edc21fba4/chainerrl/misc/copy_param.py
+# !/usr/bin/env python
 
+# from mincepie import mapreducer, launcher
+import cv2
+from PIL import Image
 import numpy as np
 import tensorflow as tf
 import os
 import sys
 import subprocess
+import imageio
+import errno
 import scipy.misc
 from scipy.misc import imsave
 
 
+# from https://github.com/chainer/chainerrl/blob/f119a1fe210dd31ea123d244258d9b5edc21fba4/chainerrl/misc/copy_param.py
 def record_setting(out):
     """Record scripts and commandline arguments"""
     out = out.split()[0].strip()
@@ -18,6 +24,191 @@ def record_setting(out):
 
     with open(out + "/command.txt", "w") as f:
         f.write(" ".join(sys.argv) + "\n")
+
+
+# https://github.com/BVLC/caffe/blob/master/tools/extra/resize_and_crop_images.py
+FLAGS = tf.app.flags.FLAGS
+
+tf.app.flags.DEFINE_string('image_lib', 'opencv',
+                           'OpenCV or PIL, case insensitive. The default value is the faster OpenCV.')
+tf.app.flags.DEFINE_string('input_folder', '',
+                           'The folder that contains all input images, organized in synsets.')
+tf.app.flags.DEFINE_integer('output_side_length', 256,
+                            'Expected side length of the output image.')
+tf.app.flags.DEFINE_string('output_folder', '',
+                           'The folder that we write output resized and cropped images to')
+
+
+class OpenCVResizeCrop:
+    def resize_and_crop_image(self, input_file, output_file, output_side_length=256):
+        """Takes an image name, resize it and crop the center square
+        """
+        img = cv2.imread(input_file)
+        height, width, depth = img.shape
+        new_height = output_side_length
+        new_width = output_side_length
+        if height > width:
+            new_height = output_side_length * height / width
+        else:
+            new_width = output_side_length * width / height
+        resized_img = cv2.resize(img, (new_width, new_height))
+        height_offset = (new_height - output_side_length) / 2
+        width_offset = (new_width - output_side_length) / 2
+        cropped_img = resized_img[height_offset:height_offset + output_side_length,
+                      width_offset:width_offset + output_side_length]
+        cv2.imwrite(output_file, cropped_img)
+
+
+class PILResizeCrop:
+    # http://united-coders.com/christian-harms/image-resizing-tips-every-coder-should-know/
+    def resize_and_crop_image(self, input_file, output_file, output_side_length=256, fit=True):
+        """Downsample the image.
+        """
+        img = Image.open(input_file)
+        box = (output_side_length, output_side_length)
+        # preresize image with factor 2, 4, 8 and fast algorithm
+        factor = 1
+        while img.size[0] / factor > 2 * box[0] and img.size[1] * 2 / factor > 2 * box[1]:
+            factor *= 2
+        if factor > 1:
+            img.thumbnail((img.size[0] / factor, img.size[1] / factor), Image.NEAREST)
+
+        # calculate the cropping box and get the cropped part
+        if fit:
+            x1 = y1 = 0
+            x2, y2 = img.size
+            wRatio = 1.0 * x2 / box[0]
+            hRatio = 1.0 * y2 / box[1]
+            if hRatio > wRatio:
+                y1 = int(y2 / 2 - box[1] * wRatio / 2)
+                y2 = int(y2 / 2 + box[1] * wRatio / 2)
+            else:
+                x1 = int(x2 / 2 - box[0] * hRatio / 2)
+                x2 = int(x2 / 2 + box[0] * hRatio / 2)
+            img = img.crop((x1, y1, x2, y2))
+
+        # Resize the image with best quality algorithm ANTI-ALIAS
+        img.thumbnail(box, Image.ANTIALIAS)
+
+        # save it into a file-like object
+        with open(output_file, 'wb') as out:
+            img.save(out, 'JPEG', quality=75)
+
+
+# class ResizeCropImagesMapper(mapreducer.BasicMapper):
+#     '''The ImageNet Compute mapper.
+#     The input value would be the file listing images' paths relative to input_folder.
+#     '''
+#
+#     def map(self, key, value):
+#         if type(value) is not str:
+#             value = str(value)
+#         files = [value]
+#         image_lib = FLAGS.image_lib.lower()
+#         if image_lib == 'pil':
+#             resize_crop = PILResizeCrop()
+#         else:
+#             resize_crop = OpenCVResizeCrop()
+#         for i, line in enumerate(files):
+#             try:
+#                 line = line.replace(FLAGS.input_folder, '').strip()
+#                 line = line.split()
+#                 image_file_name = line[0]
+#                 input_file = os.path.join(FLAGS.input_folder, image_file_name)
+#                 output_file = os.path.join(FLAGS.output_folder, image_file_name)
+#                 output_dir = output_file[:output_file.rfind('/')]
+#                 if not os.path.exists(output_dir):
+#                     os.makedirs(output_dir)
+#                 feat = resize_crop.resize_and_crop_image(input_file, output_file,
+#                                                          FLAGS.output_side_length)
+#             except Exception, e:
+#                 # we ignore the exception (maybe the image is corrupted?)
+#                 print(line, Exception, e)
+#         yield value, FLAGS.output_folder
+
+
+# mapreducer.REGISTER_DEFAULT_MAPPER(ResizeCropImagesMapper)
+# mapreducer.REGISTER_DEFAULT_REDUCER(mapreducer.NoPassReducer)
+# mapreducer.REGISTER_DEFAULT_READER(mapreducer.FileReader)
+# mapreducer.REGISTER_DEFAULT_WRITER(mapreducer.FileWriter)
+
+
+# ------
+
+
+# Some codes from https://github.com/openai/improved-gan/blob/master/imagenet/utils.py
+def get_image(image_path, image_size, is_crop=False, bbox=None):
+    global index
+    img, path = imread(image_path)
+    if img is not None:
+        out = transform(img, image_size, is_crop, bbox)
+    else:
+        out = None
+    return out, path
+
+
+def custom_crop(img, bbox):
+    # bbox = [x-left, y-top, width, height]
+    imsiz = img.shape  # [height, width, channel]
+    # if box[0] + box[2] >= imsiz[1] or\
+    #     box[1] + box[3] >= imsiz[0] or\
+    #     box[0] <= 0 or\
+    #     box[1] <= 0:
+    #     box[0] = np.maximum(0, box[0])
+    #     box[1] = np.maximum(0, box[1])
+    #     box[2] = np.minimum(imsiz[1] - box[0] - 1, box[2])
+    #     box[3] = np.minimum(imsiz[0] - box[1] - 1, box[3])
+    center_x = int((2 * bbox[0] + bbox[2]) / 2)
+    center_y = int((2 * bbox[1] + bbox[3]) / 2)
+    R = int(np.maximum(bbox[2], bbox[3]) * 0.75)
+    y1 = np.maximum(0, center_y - R)
+    y2 = np.minimum(imsiz[0], center_y + R)
+    x1 = np.maximum(0, center_x - R)
+    x2 = np.minimum(imsiz[1], center_x + R)
+    img_cropped = img[y1:y2, x1:x2, :]
+    return img_cropped
+
+
+def transform(image, image_size, is_crop, bbox):
+    image = colorize(image)
+    if is_crop:
+        image = custom_crop(image, bbox)
+    #
+    transformed_image = \
+        scipy.misc.imresize(image, [image_size, image_size], 'bicubic')
+    return np.array(transformed_image)
+
+
+def imread(path):
+    try:
+        img = imageio.imread(path)
+        img = img.astype(np.float)
+    except Exception:
+        img = None
+
+    if img is None or img.shape == 0:
+        # raise ValueError(path + " got loaded as a dimensionless array!")
+        img = None
+    return img, path
+
+
+def colorize(img):
+    if img.ndim == 2:
+        img = img.reshape(img.shape[0], img.shape[1], 1)
+        img = np.concatenate([img, img, img], axis=2)
+    if img.shape[2] == 4:
+        img = img[:, :, 0:3]
+    return img
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
 # Image grid saver, based on color_grid_vis from github.com/Newmu
@@ -169,3 +360,7 @@ def get_loss(disc_real, disc_fake, loss_type='HINGE'):
         g_loss = -tf.reduce_mean(tf.log(tf.nn.sigmoid(disc_fake)))
 
     return d_loss, g_loss
+
+
+if __name__ == '__main__':
+    tf.app.run()
