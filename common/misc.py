@@ -121,11 +121,26 @@ def get_loss(disc_real, disc_fake, loss_type='HINGE'):
         disc_fake_l = tf.reduce_mean(disc_fake)
         d_loss = disc_real_l + disc_fake_l
 
+        # clip_d_vars_op = [var.assign(tf.clip_by_value(var, clip_values[0], clip_values[1])) for var in d_vars]
+        # # Paste the code bellow to where `session.run(d_train_op)`
+        # session.run(clip_d_vars_op)
+
         g_loss = -tf.reduce_mean(disc_fake)
     elif loss_type == 'WGAN-GP':
         disc_real_l = - tf.reduce_mean(disc_real)
         disc_fake_l = tf.reduce_mean(disc_fake)
         d_loss = disc_real_l + disc_fake_l
+
+        # Paste the code bellow where `get_loss()` is called.
+        # # Gradient Penalty
+        # alpha = tf.random_uniform(shape=[args.batch_size, 1, 1, 1], minval=0., maxval=1.)
+        # differences = fake_data - real_data
+        # interpolates = real_data + (alpha * differences)
+        # gradients = tf.gradients(
+        #     model.get_discriminator(interpolates, real_labels, 'NO_OPS', reuse=True)[0], [interpolates])[0]
+        # slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1, 2, 3]))
+        # gradient_penalty = 10 * tf.reduce_mean((slopes - 1.) ** 2)
+        # d_loss_gan += gradient_penalty
 
         g_loss = -tf.reduce_mean(disc_fake)
     elif loss_type == 'LSGAN':
