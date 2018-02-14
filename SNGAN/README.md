@@ -47,21 +47,14 @@ The **best inception_50k** is : `8.432400703430176 ± 0.1185135617852211`, the i
 2. It's hard to say whether the improvement has something to do with the supervision from label, although more information is introdeced, it also means the Generator has to generate image consitent with the label, in other words, the generation process become harder. So, the **Unconditional** generation may or may not get better results, you can have a try and see what will happer.
 
 
-### Prerequisite
-
-1. Install TensorFlow 1.5
-2. Numpy
-3. Scipy
-
-
 ### How to run:
 
-Change this [line](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/gan_cifar_resnet.py#L72) to use 1 or 2 GPU. Hyperparameters is set according to what talked in paper.
+Change [this line](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/gan_cifar_resnet.py#L72) to use 1 or 2 GPU. Hyperparameters is set according to what talked in paper.
 
 Make sure the hyperparameters (from [this line](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/gan_cifar_resnet.py#L40)) are what you want before running the command bellow.
 
 ``` python
-
+# cd to `SNGAN` folder and run command bellow
 CUDA_VISIBLE_DEVICES=0,1 python gan_cifar_resnet.py
 
 ```
@@ -71,19 +64,19 @@ CUDA_VISIBLE_DEVICES=0,1 python gan_cifar_resnet.py
 
 The pretrained model can be downloaded [here](https://www.dropbox.com/sh/ce5nlk0v0tgq0ah/AABEvy3T2X1WFkYqCV5ze59ga?dl=0).
 
-You can use the pretrained model to generate images, or you can use this as initialization to continue training (training from start can be slow).
+You can use the pretrained model to generate images, or you can use this as an initialization to continue training (training from start can be slow, about 2 days on single 1080Ti).
 
 
 ### Other issue
 
-Since this is **Conditional** generation, the label information is introdeced by [Conditional Batch Normalization]() in `Generator` and concatenating label information with intermediate feature map in `Discriminator` (See [code](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/gan_cifar_resnet.py#L283) in `Discriminator` for clarification).
+Since this is **Conditional** generation, the label information is introdeced by [Conditional Batch Normalization](https://openreview.net/forum?id=BJO-BuT1g) in `Generator` and concatenating label information with intermediate feature map in `Discriminator` (See [code](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/SNGAN/gan_cifar_resnet.py#L283) in `Discriminator` for clarification).
 
 I have tried concatenating label information with noise `z` in `Generator`, but the result is not good, see bellow for more details:
 
 
 - `Concatenate label information in G + Conditional Batch Norm in G` : use small learning rate (e.g. 0.0001) can convergece, but become slow.
 
-- `Concatenate label information in G + Batch Norm in G` : replace [Conditional Batch Normalization]() with [Batch Normalization](http://proceedings.mlr.press/v37/ioffe15.pdf), the training is similar with above.
+- `Concatenate label information in G + Batch Norm in G` : replace [Conditional Batch Normalization](https://openreview.net/forum?id=BJO-BuT1g) with [Batch Normalization](http://proceedings.mlr.press/v37/ioffe15.pdf), the training is similar with above.
 
 
 I didn't tune hyperparameters, so the results may get better than I tried, with hyperparameter set properly.
