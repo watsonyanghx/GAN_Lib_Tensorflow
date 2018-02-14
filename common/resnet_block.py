@@ -39,8 +39,8 @@ def Normalize(name, inputs, labels=None, spectral_normed=True):
             if spectral_normed:
                 return inputs
             else:
-                return lib.ops.layernorm.Layernorm(name, [1, 2, 3], inputs)
-                # return lib.ops.batchnorm.Batchnorm(inputs, fused=True)
+                # return lib.ops.layernorm.Layernorm(name, [1, 2, 3], inputs)
+                return lib.ops.batchnorm.Batchnorm(inputs, fused=True)
         elif ('G.' in name) and NORMALIZATION_G:
             if labels is not None:
                 # print('Cond_Batchnorm')
@@ -213,7 +213,7 @@ def Generator_PGGAN(noise, bc, trans=False, alpha=0.01, inputs_norm=False, label
     output = tf.reshape(output, [-1, 4, 4, 1024])
 
     # output = lib.ops.batchnorm.Batchnorm(output)
-    output = Normalize('G.N0', output, labels=labels, spectral_normed=False)
+    output = Normalize('G.N0', output, labels=labels, spectral_normed=True)
     output = tf.nn.relu(output)
     print('G.Input: {}'.format(output.shape.as_list()))
     # (N, 4, 4, 1024)
@@ -256,7 +256,7 @@ def Generator_PGGAN(noise, bc, trans=False, alpha=0.01, inputs_norm=False, label
                               'G.{}_toRGB'.format(bc), inputs_norm=inputs_norm, resample=None, labels=labels)
 
     # output = lib.ops.batchnorm.Batchnorm(toRGB)
-    output = Normalize('G.Output_Normalize', toRGB, labels=labels, spectral_normed=False)
+    output = Normalize('G.Output_Normalize', toRGB, labels=labels, spectral_normed=True)
     output = tf.nn.relu(output)
     output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 3, 1, 'G.Output')
     # output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 1, 1, 'G.Output')
