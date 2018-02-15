@@ -9,10 +9,10 @@ import tensorflow as tf
 def Batchnorm(inputs, is_training=True, fused=True):
     output = \
         tf.contrib.layers.batch_norm(inputs,
-                                     decay=0.99,
+                                     decay=0.9,
                                      center=True,
-                                     scale=False,
-                                     epsilon=1e-3,
+                                     scale=True,
+                                     epsilon=1e-5,
                                      updates_collections=None,
                                      is_training=is_training,
                                      fused=fused,
