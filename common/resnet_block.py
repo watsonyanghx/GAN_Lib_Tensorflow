@@ -24,13 +24,12 @@ NORMALIZATION_G = True
 NORMALIZATION_D = True
 
 
-def nonlinearity(x):
-    return tf.nn.relu(x)
-
-
-def lrelu(x, leakiness=0.2):
-    assert leakiness <= 1, "leakiness must be <= 1"
-    return tf.maximum(x, leakiness * x)
+def nonlinearity(x, activation_fn='relu', leakiness=0.2):
+    if activation_fn == 'relu':
+        return tf.nn.relu(x)
+    if activation_fn == 'lrelu':
+        assert 0 < leakiness <= 1, "leakiness must be <= 1"
+        return tf.maximum(x, leakiness * x)
 
 
 def Normalize(name, inputs, labels=None, spectral_normed=True):
@@ -103,7 +102,7 @@ def UpsampleConv(inputs, output_dim, filter_size=3, stride=1, name=None,
 
 def ResidualBlock(inputs, input_dim, output_dim, filter_size, name,
                   spectral_normed=False, update_collection=None, inputs_norm=False,
-                  resample=None, labels=None, biases=True):
+                  resample=None, labels=None, biases=True, activation_fn='relu'):
     """resample: None, 'down', or 'up'.
     """
     if resample == 'down':
@@ -132,9 +131,9 @@ def ResidualBlock(inputs, input_dim, output_dim, filter_size, name,
 
     output = inputs
     output = Normalize(name + '.N1', output, labels=labels, spectral_normed=spectral_normed)
-    output = nonlinearity(output)
+    output = nonlinearity(output, activation_fn=activation_fn)
     # if resample == 'up':
-    #     output = nonlinearity(output)
+    #     output = nonlinearity(output, activation_fn='relu')
     # else:
     #     output = lrelu(output, leakiness=0.2)
 
@@ -145,9 +144,9 @@ def ResidualBlock(inputs, input_dim, output_dim, filter_size, name,
                     he_init=True, biases=biases)
 
     output = Normalize(name + '.N2', output, labels=labels, spectral_normed=spectral_normed)
-    output = nonlinearity(output)
+    output = nonlinearity(output, activation_fn=activation_fn)
     # if resample == 'up':
-    #     output = nonlinearity(output)
+    #     output = nonlinearity(output, activation_fn='relu')
     # else:
     #     output = lrelu(output, leakiness=0.2)
 
@@ -160,7 +159,7 @@ def ResidualBlock(inputs, input_dim, output_dim, filter_size, name,
     return shortcut + output
 
 
-def OptimizedResBlockDisc1(inputs, DIM_D=128,
+def OptimizedResBlockDisc1(inputs, DIM_D=128, activation_fn='relu',
                            spectral_normed=False, update_collection=None, inputs_norm=False,
                            biases=True):
     conv_1 = functools.partial(lib.ops.conv2d.Conv2D, input_dim=3, output_dim=DIM_D)
@@ -178,7 +177,7 @@ def OptimizedResBlockDisc1(inputs, DIM_D=128,
                     update_collection=update_collection,
                     inputs_norm=inputs_norm,
                     he_init=True, biases=biases)
-    output = tf.nn.relu(output)
+    output = nonlinearity(output, activation_fn=activation_fn)
     # output = lrelu(output, leakiness=0.2)
     output = conv_2(inputs=output, filter_size=3, name='D.DownBlock.1.Conv2',
                     spectral_normed=spectral_normed,
@@ -214,7 +213,7 @@ def Generator_PGGAN(noise, bc, trans=False, alpha=0.01, inputs_norm=False, label
 
     # output = lib.ops.batchnorm.Batchnorm(output)
     output = Normalize('G.N0', output, labels=labels, spectral_normed=True)
-    output = tf.nn.relu(output)
+    output = nonlinearity(output, activation_fn='relu')
     print('G.Input: {}'.format(output.shape.as_list()))
     # (N, 4, 4, 1024)
     output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 1024, 3, 1, 'G.Conv',
@@ -257,7 +256,7 @@ def Generator_PGGAN(noise, bc, trans=False, alpha=0.01, inputs_norm=False, label
 
     # output = lib.ops.batchnorm.Batchnorm(toRGB)
     output = Normalize('G.Output_Normalize', toRGB, labels=labels, spectral_normed=True)
-    output = tf.nn.relu(output)
+    output = nonlinearity(output, activation_fn='relu')
     output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 3, 1, 'G.Output')
     # output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 1, 1, 'G.Output')
     print('G.Output: {}'.format(output.shape.as_list()))
@@ -316,7 +315,7 @@ def Discriminator_PGGAN(x_var, c_var, bc, trans=False, alpha=0.01, inputs_norm=F
                                resample=None, biases=True)
 
         if bc > 0:
-            x_code = ResidualBlock(x_code, 3, get_dim(bc - 1), 3, 'D.DownBlock.{}'.format(bc),
+            x_code = ResidualBlock(x_code, get_dim(bc - 1), get_dim(bc - 1), 3, 'D.DownBlock.{}'.format(bc),
                                    spectral_normed=True,
                                    update_collection=update_collection,
                                    inputs_norm=inputs_norm,
@@ -339,7 +338,7 @@ def Discriminator_PGGAN(x_var, c_var, bc, trans=False, alpha=0.01, inputs_norm=F
                            inputs_norm=inputs_norm,
                            resample=None, biases=True)
     print('D.NoneBlock: {}'.format(output.shape.as_list()))
-    output = tf.nn.relu(output)
+    output = nonlinearity(output, activation_fn='relu')
 
     output = tf.reduce_mean(output, axis=[1, 2])
     logits = lib.ops.linear.Linear(output, output.shape.as_list()[-1], 1, 'D.Output',
