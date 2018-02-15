@@ -1,7 +1,7 @@
 # !/usr/bin/env python
 
 # from mincepie import mapreducer, launcher
-import cv2
+# import cv2
 from PIL import Image
 import numpy as np
 import tensorflow as tf
