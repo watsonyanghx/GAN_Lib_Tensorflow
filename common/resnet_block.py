@@ -85,7 +85,7 @@ def MeanPoolConv(inputs, output_dim, filter_size=3, stride=1, name=None,
 
 def UpsampleConv(inputs, output_dim, filter_size=3, stride=1, name=None,
                  spectral_normed=False, update_collection=None, inputs_norm=False,
-                 he_init=False, biases=True):
+                 he_init=True, biases=True):
     output = inputs
     output = tf.concat([output, output, output, output], axis=3)
     output = tf.depth_to_space(output, 2)
@@ -208,7 +208,7 @@ def Generator_PGGAN(noise, bc, trans=False, alpha=0.01, inputs_norm=False, label
 
     # (N, 4, 4, 1024)
     output = lib.ops.linear.Linear(noise, noise.shape.as_list()[-1], 4 * 4 * 1024, 'G.Input',
-                                   inputs_norm=inputs_norm, biases=True)
+                                   inputs_norm=inputs_norm, biases=True, initialization=None)
     output = tf.reshape(output, [-1, 4, 4, 1024])
 
     # output = lib.ops.batchnorm.Batchnorm(output)
@@ -257,7 +257,7 @@ def Generator_PGGAN(noise, bc, trans=False, alpha=0.01, inputs_norm=False, label
     # output = lib.ops.batchnorm.Batchnorm(toRGB)
     output = Normalize('G.Output_Normalize', toRGB, labels=labels, spectral_normed=True)
     output = nonlinearity(output, activation_fn='relu')
-    output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 3, 1, 'G.Output')
+    output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 3, 1, 'G.Output', he_init=False)
     # output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 3, 1, 1, 'G.Output')
     print('G.Output: {}'.format(output.shape.as_list()))
 
@@ -345,7 +345,7 @@ def Discriminator_PGGAN(x_var, c_var, bc, trans=False, alpha=0.01, inputs_norm=F
                                    spectral_normed=True,
                                    update_collection=update_collection,
                                    inputs_norm=inputs_norm,
-                                   biases=True)
+                                   biases=True, initialization=None)
 
     output_wgan = tf.reshape(logits, [-1])
 

@@ -79,13 +79,12 @@ if len(DEVICES) == 1:  # Hack because the code assumes 2 GPUs
 lib.print_model_settings(locals().copy())
 
 
-def nonlinearity(x):
-    return tf.nn.relu(x)
-
-
-# def lrelu(x, leakiness=0.2):
-#     assert leakiness <= 1, "leakiness must be <= 1"
-#     return tf.maximum(x, leakiness * x)
+def nonlinearity(x, activation_fn='relu', leakiness=0.2):
+    if activation_fn == 'relu':
+        return tf.nn.relu(x)
+    if activation_fn == 'lrelu':
+        assert 0 < leakiness <= 1, "leakiness must be <= 1"
+        return tf.maximum(x, leakiness * x)
 
 
 def Normalize(name, inputs, labels=None):
@@ -103,13 +102,11 @@ def Normalize(name, inputs, labels=None):
             return lib.ops.layernorm.Layernorm(name, [1, 2, 3], inputs)
         elif ('G.' in name) and NORMALIZATION_G:
             if labels is not None:
-                # print('Cond_Batchnorm')
                 # inputs_ = tf.transpose(inputs, [0, 3, 1, 2], name='NHWC_to_NCHW')
                 outputs = lib.ops.cond_batchnorm.Batchnorm(name, [0, 1, 2], inputs, labels=labels, n_labels=1000)
                 # return tf.transpose(outputs, [0, 2, 3, 1], name='NCHW_to_NHWC')
                 return outputs
             else:
-                # print('Batchnorm')
                 # inputs_ = tf.transpose(inputs, [0, 3, 1, 2], name='NHWC_to_NCHW')
                 outputs = lib.ops.batchnorm.Batchnorm(inputs, fused=True)
                 # return tf.transpose(outputs, [0, 2, 3, 1], name='NCHW_to_NHWC')
@@ -148,7 +145,7 @@ def MeanPoolConv(inputs, output_dim, filter_size=3, stride=1, name=None,
 
 def UpsampleConv(inputs, output_dim, filter_size=3, stride=1, name=None,
                  spectral_normed=False, update_collection=None, inputs_norm=False,
-                 he_init=False, biases=True):
+                 he_init=True, biases=True):
     output = inputs
     output = tf.concat([output, output, output, output], axis=3)
     output = tf.depth_to_space(output, 2)

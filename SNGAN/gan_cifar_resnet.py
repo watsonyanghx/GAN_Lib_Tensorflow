@@ -141,7 +141,7 @@ def MeanPoolConv(inputs, output_dim, filter_size=3, stride=1, name=None,
 
 def UpsampleConv(inputs, output_dim, filter_size=3, stride=1, name=None,
                  spectral_normed=False, update_collection=None, inputs_norm=False,
-                 he_init=False, biases=True):
+                 he_init=True, biases=True):
     output = inputs
     output = tf.concat([output, output, output, output], axis=3)
     output = tf.depth_to_space(output, 2)
