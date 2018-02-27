@@ -165,9 +165,9 @@ def input_fn(filenames, labels, batch_size, num_epochs=1):
     dataset = dataset.batch(batch_size=batch_size)
 
     iterator = dataset.make_one_shot_iterator()
-    images, labels = iterator.get_next()
+    images, labels_ = iterator.get_next()
 
-    return images, labels
+    return images, labels_
 
 
 if __name__ == '__main__':
