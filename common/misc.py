@@ -254,7 +254,7 @@ def get_z(batchsize, n_hidden=128):
     Returns:
     """
     z = np.random.normal(size=(batchsize, n_hidden)).astype(np.float32)
-    z /= np.sqrt(np.sum(z * z, axis=1, keepdims=True) / n_hidden + 1e-8)
+    # z /= np.sqrt(np.sum(z * z, axis=1, keepdims=True) / n_hidden + 1e-8)
     return z
 
 
@@ -329,7 +329,7 @@ def get_loss(disc_real, disc_fake, loss_type='HINGE'):
         # interpolates = real_data + (alpha * differences)
         # gradients = tf.gradients(
         #     model.get_discriminator(interpolates, real_labels, 'NO_OPS', reuse=True)[0], [interpolates])[0]
-        # slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1, 2, 3]))
+        # slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3]))
         # gradient_penalty = 10 * tf.reduce_mean((slopes - 1.) ** 2)
         # d_loss_gan += gradient_penalty
 
