@@ -262,6 +262,13 @@ def get_z(batchsize, n_hidden=128):
 
 
 def scope_has_variables(scope):
+    """
+
+    Args:
+      scope:
+
+    Returns:
+    """
     return len(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=scope.name)) > 0
 
 
@@ -301,9 +308,19 @@ def optimistic_restore(session, save_file):
 
 
 def get_loss(disc_real, disc_fake, loss_type='HINGE'):
+    """
+    https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/gan/python/losses/python/losses_impl.py
+
+    Args:
+      disc_real:
+      disc_fake:
+      loss_type:
+
+    Returns:
+    """
     if loss_type == 'HINGE':
-        disc_real_l = tf.reduce_mean(tf.nn.relu(1. - disc_real))
-        disc_fake_l = tf.reduce_mean(tf.nn.relu(1. + disc_fake))
+        disc_real_l = tf.reduce_mean(tf.nn.relu(1.0 - disc_real))
+        disc_fake_l = tf.reduce_mean(tf.nn.relu(1.0 + disc_fake))
         d_loss = disc_real_l + disc_fake_l
 
         g_loss = -tf.reduce_mean(disc_fake)
@@ -322,24 +339,27 @@ def get_loss(disc_real, disc_fake, loss_type='HINGE'):
         disc_fake_l = tf.reduce_mean(disc_fake)
         d_loss = disc_real_l + disc_fake_l
 
+        # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/gan/python/losses/python/losses_impl.py#L301
         # Paste the code bellow where `get_loss()` is called.
         # # Gradient Penalty
         # alpha = tf.random_uniform(shape=[args.batch_size, 1, 1, 1], minval=0., maxval=1.)
-        # differences = fake_data - real_data
+        # differences = x_fake - real_data
         # interpolates = real_data + (alpha * differences)
         # gradients = tf.gradients(
         #     model.get_discriminator(interpolates, real_labels, 'NO_OPS', reuse=True)[0], [interpolates])[0]
-        # slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3]))
-        # gradient_penalty = 10 * tf.reduce_mean((slopes - 1.) ** 2)
+        # slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3]) + 1e-10)
+        # gradient_penalty = 10 * tf.reduce_mean(tf.square((slopes - 1.)))
         # d_loss_gan += gradient_penalty
 
         g_loss = -tf.reduce_mean(disc_fake)
     elif loss_type == 'LSGAN':
-        disc_real_l = tf.reduce_mean(tf.square(1. - disc_real))
+        # L = 1/2 * (D(x) - `real`) ** 2 + 1/2 * (D(G(z)) - `fake_label`) ** 2
+        disc_real_l = tf.reduce_mean(tf.square(1.0 - disc_real))
         disc_fake_l = tf.reduce_mean(tf.square(disc_fake))
-        d_loss = (disc_real_l + disc_fake_l) / 2
+        d_loss = (disc_real_l + disc_fake_l) / 2.0
 
-        g_loss = tf.reduce_mean(tf.square(1. - disc_fake)) / 2
+        # L = 1/2 * (D(G(z)) - `real_label`) ** 2
+        g_loss = tf.reduce_mean(tf.square(1.0 - disc_fake)) / 2.0
     elif loss_type == 'CGAN':
         disc_real_l = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_real,
@@ -352,12 +372,24 @@ def get_loss(disc_real, disc_fake, loss_type='HINGE'):
         g_loss = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(logits=disc_fake,
                                                     labels=tf.ones_like(disc_fake)))
-    elif loss_type == 'Goodfellow':
+    elif loss_type == 'Modified_MiniMax':
+        # L = - real_weights * log(sigmoid(D(x)))
+        #     - generated_weights * log(1 - sigmoid(D(G(z))))
         disc_real_l = -tf.reduce_mean(tf.log(tf.nn.sigmoid(disc_real)))
-        disc_fake_l = -tf.reduce_mean(tf.log(1 - tf.nn.sigmoid(disc_fake)))
+        disc_fake_l = -tf.reduce_mean(tf.log(1.0 - tf.nn.sigmoid(disc_fake)))
         d_loss = disc_real_l + disc_fake_l
 
+        # L = -log(sigmoid(D(G(z))))
         g_loss = -tf.reduce_mean(tf.log(tf.nn.sigmoid(disc_fake)))
+    elif loss_type == 'MiniMax':
+        # L = - real_weights * log(sigmoid(D(x)))
+        #     - generated_weights * log(1 - sigmoid(D(G(z))))
+        disc_real_l = -tf.reduce_mean(tf.log(tf.nn.sigmoid(disc_real)))
+        disc_fake_l = -tf.reduce_mean(tf.log(1.0 - tf.nn.sigmoid(disc_fake)))
+        d_loss = disc_real_l + disc_fake_l
+
+        # L = log(sigmoid(D(x))) + log(1 - sigmoid(D(G(z))))
+        g_loss = tf.reduce_mean(tf.log(1.0 - tf.nn.sigmoid(disc_fake)))
 
     return d_loss, g_loss
 
