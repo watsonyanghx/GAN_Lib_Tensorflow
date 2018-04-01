@@ -3,8 +3,32 @@
 Code for paper: [Conditional Image Synthesis With Auxiliary Classifier GANs](https://openreview.net/forum?id=BkDDM04Ke)
 
 
-I'm working on it, but I don't have available GPU now .... and by the way, the GPU cloud (AWS, Tencent and so on) is so so so so expensive!!!!!!
+# cifar-10
 
+### Results
+
+The image generated:
+
+![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/samples_98999.png)
+
+There are 10 columns with each corresponding to one label, in the same column, **only** the random noise is different.
+
+
+The inception_50k curve:
+
+![inception_50k](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/inception_50k.jpg)
+
+
+The inception_50k_std curve:
+
+![inception_50k_std](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/inception_50k_std.jpg)
+
+
+### Inception Score
+
+The **inception_50k** is : `7.831849098205566 ± 0.07496337592601776`, the inception score can be improved by changint nerwork architecture or tuning hyperparameters.
+
+I really don't konw how to improve it, if you know how to fix this, a PR is welcomed.
 
 
 ### How to run:
@@ -23,10 +47,13 @@ CUDA_VISIBLE_DEVICES=0 python ACGAN/train.py \
 ```
 
 
+### Pretrained model
+
+I didn't upload the pre-trained model, because this model can be improved by changing the network architecture or tuning the hyptermeters. 
+
+If you do need the pre-trained model, please open an issue, and I will upload it.
+
 
 # LSUN
 
 ### TODO
-
-
-
