@@ -59,27 +59,56 @@ def Linear(inputs, input_dim, output_dim, name,
                 size=size
             ).astype('float32')
 
+        # https://keras.io/initializers/
         if initialization == 'lecun':  # and input_dim != output_dim):
             # disabling orth. init for now because it's too slow
             weight_values = uniform(
                 np.sqrt(1. / input_dim),
                 (input_dim, output_dim)
             )
-        elif initialization == 'glorot' or (initialization is None):
+            # tf.contrib.layers.variance_scaling_initializer(
+            #     factor=1.0,
+            #     mode='FAN_IN',
+            #     uniform=True,
+            #     seed=None,
+            #     dtype=tf.float32
+            # )
+        elif initialization == 'glorot' or initialization == 'xavier' or (initialization is None):
             weight_values = uniform(
                 np.sqrt(2. / (input_dim + output_dim)),
                 (input_dim, output_dim)
             )
+            # tf.contrib.layers.variance_scaling_initializer(
+            #     factor=1.0,
+            #     mode='FAN_AVG',
+            #     uniform=True,
+            #     seed=None,
+            #     dtype=tf.float32
+            # )
         elif initialization == 'he':
             weight_values = uniform(
                 np.sqrt(2. / input_dim),
                 (input_dim, output_dim)
             )
+            # tf.contrib.layers.variance_scaling_initializer(
+            #     factor=2.0,
+            #     mode='FAN_IN',
+            #     uniform=True,
+            #     seed=None,
+            #     dtype=tf.float32
+            # )
         elif initialization == 'glorot_he':
             weight_values = uniform(
                 np.sqrt(4. / (input_dim + output_dim)),
                 (input_dim, output_dim)
             )
+            # tf.contrib.layers.variance_scaling_initializer(
+            #     factor=2.0,
+            #     mode='FAN_AVG',
+            #     uniform=True,
+            #     seed=None,
+            #     dtype=tf.float32
+            # )
         elif initialization == 'orthogonal' or \
                 (initialization is None and input_dim == output_dim):
             # From lasagne
