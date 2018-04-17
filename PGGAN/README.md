@@ -18,6 +18,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=4 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --model='resnet'
 
 
@@ -26,6 +27,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=8 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --restore \
   --model='resnet' \
   --trans \
@@ -36,6 +38,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=8 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --restore \
   --model='resnet' \
   --block_count=1
@@ -46,6 +49,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=16 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --restore \
   --model='resnet' \
   --trans \
@@ -55,6 +59,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=16 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --restore \
   --model='resnet' \
   --block_count=2
@@ -65,6 +70,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=32 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --restore \
   --model='resnet' \
   --trans \
@@ -74,6 +80,7 @@ CUDA_VISIBLE_DEVICES=1 python PGGAN/train.py \
   --batch_size=64 \
   --mode='train' \
   --image_size=32 \
+  --data_dir=/home/yhx/gan_lib/cifar-10 \
   --restore \
   --model='resnet' \
   --block_count=3

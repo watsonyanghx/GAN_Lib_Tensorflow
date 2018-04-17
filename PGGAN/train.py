@@ -36,7 +36,7 @@ parser.add_argument('--n_dis', type=int, default=5,
                     help='Number of discriminator update per generator update.')
 
 #
-parser.add_argument('--data_dir', type=str, default='/home/yhx/sn_gan/cifar-10')
+parser.add_argument('--data_dir', type=str, default='./cifar-10')
 parser.add_argument('--checkpoint_dir', type=str, default='../checkpoint',
                     help='Directory to stroe checkpoints and summaries.')
 parser.add_argument('--z_dim', type=int, default=512, help='dim')

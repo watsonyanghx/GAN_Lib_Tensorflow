@@ -72,13 +72,11 @@ def _init_inception():
         statinfo = os.stat(filepath)
         print('Succesfully downloaded', filename, statinfo.st_size, 'bytes.')
     tarfile.open(filepath, 'r:gz').extractall(MODEL_DIR)
-
     with tf.gfile.FastGFile(os.path.join(
             MODEL_DIR, 'classify_image_graph_def.pb'), 'rb') as f:
         graph_def = tf.GraphDef()
         graph_def.ParseFromString(f.read())
         _ = tf.import_graph_def(graph_def, name='')
-
     # Works with an arbitrary minibatch size.
     with tf.Session() as sess:
         pool3 = sess.graph.get_tensor_by_name('pool_3:0')
@@ -93,15 +91,9 @@ def _init_inception():
                         new_shape.append(None)
                     else:
                         new_shape.append(s)
-                # o._shape = tf.TensorShape(new_shape)
-                o.set_shape(tf.TensorShape(new_shape))
+                o._shape = tf.TensorShape(new_shape)
         w = sess.graph.get_operation_by_name("softmax/logits/MatMul").inputs[1]
-
-        # logits = tf.matmul(tf.squeeze(pool3), w)
-        tmp = tf.squeeze(pool3)
-        shp = [1] + tmp.shape.as_list()
-        logits = tf.matmul(tf.reshape(tmp, shp), w)
-
+        logits = tf.matmul(tf.squeeze(pool3), w)
         softmax = tf.nn.softmax(logits)
 
 
