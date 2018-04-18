@@ -3,6 +3,11 @@
 Code for paper: [Spectral Normalization for Generative Adversarial Networks.](https://openreview.net/forum?id=B1QRgziT-)
 
 
+**TODO**
+
+I didn't notice the [Prjection Discriminator](https://openreview.net/forum?id=ByS1VpgRZ&noteId=r14W7yTrf), I plan to add this feature to this repo.
+
+
 # cifar-10
 
 
@@ -44,7 +49,7 @@ The **best inception_50k** is : `8.432400703430176 ± 0.1185135617852211`, the i
 
 1. This is **Conditional** generation on cifar10, while in the paper, it is **Unconditional** generation and the inception score reported is: `8.22 ± .05`.
 
-2. It's hard to say whether the improvement has something to do with the supervision from label, although more information is introdeced, it also means the Generator has to generate image consitent with the label, in other words, the generation process become harder. So, the **Unconditional** generation may or may not get better results, you can have a try and see what will happer.
+2. It's hard to say whether the improvement has something to do with the supervision from label, although more information is introdeced, it also means the Generator has to generate image consitent with the label, in other words, the generation process becomes harder. So, the **Unconditional** generation may or may not get better results, you can have a try and see what will happen.
 
 
 ### How to run:
