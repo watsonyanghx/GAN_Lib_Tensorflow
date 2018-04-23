@@ -3,7 +3,6 @@
 # import numpy as np
 import tensorflow as tf
 import functools
-# import math
 
 import os
 import sys
@@ -13,9 +12,7 @@ sys.path.append(os.getcwd())
 import common as lib
 import common.ops.conv2d
 import common.ops.linear
-import common.ops.batchnorm
-import common.ops.cond_batchnorm
-import common.ops.layernorm
+import common.ops.normalization
 
 # import common.ops.embedding
 
@@ -39,15 +36,15 @@ def Normalize(name, inputs, labels=None, spectral_normed=True):
                 return inputs
             else:
                 # return lib.ops.layernorm.Layernorm(name, [1, 2, 3], inputs)
-                return lib.ops.batchnorm.Batchnorm(inputs, fused=True)
+                return lib.ops.normalization.batch_norm(inputs, fused=True)
         elif ('G.' in name) and NORMALIZATION_G:
             if labels is not None:
                 # print('Cond_Batchnorm')
-                outputs = lib.ops.cond_batchnorm.Batchnorm(name, [0, 1, 2], inputs, labels=labels, n_labels=10)
+                outputs = lib.ops.normalization.cond_batchnorm(name, [0, 1, 2], inputs, labels=labels, n_labels=10)
                 return outputs
             else:
                 # print('Batchnorm')
-                outputs = lib.ops.batchnorm.Batchnorm(inputs, fused=True)
+                outputs = lib.ops.normalization.batch_norm(inputs, fused=True)
                 return outputs
         else:
             return inputs

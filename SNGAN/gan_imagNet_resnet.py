@@ -24,11 +24,9 @@ import common.inception.inception_score
 
 import common as lib
 import common.ops.linear
-import common.ops.cond_batchnorm
 import common.ops.conv2d
 import common.ops.embedding
-import common.ops.batchnorm
-import common.ops.layernorm
+import common.ops.normalization
 import common.plot
 
 from common.data import ILSVRC2012
@@ -99,16 +97,16 @@ def Normalize(name, inputs, labels=None):
             labels = None
 
         if ('D.' in name) and NORMALIZATION_D:
-            return lib.ops.layernorm.Layernorm(name, [1, 2, 3], inputs)
+            return lib.ops.normalization.layer_norm(name, [1, 2, 3], inputs)
         elif ('G.' in name) and NORMALIZATION_G:
             if labels is not None:
                 # inputs_ = tf.transpose(inputs, [0, 3, 1, 2], name='NHWC_to_NCHW')
-                outputs = lib.ops.cond_batchnorm.Batchnorm(name, [0, 1, 2], inputs, labels=labels, n_labels=1000)
+                outputs = lib.ops.normalization.cond_batchnorm(name, [0, 1, 2], inputs, labels=labels, n_labels=1000)
                 # return tf.transpose(outputs, [0, 2, 3, 1], name='NCHW_to_NHWC')
                 return outputs
             else:
                 # inputs_ = tf.transpose(inputs, [0, 3, 1, 2], name='NHWC_to_NCHW')
-                outputs = lib.ops.batchnorm.Batchnorm(inputs, fused=True)
+                outputs = lib.ops.normalization.batch_norm(inputs, fused=True)
                 # return tf.transpose(outputs, [0, 2, 3, 1], name='NCHW_to_NHWC')
                 return outputs
         else:

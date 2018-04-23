@@ -8,6 +8,13 @@ Code for paper: [Spectral Normalization for Generative Adversarial Networks.](ht
 I didn't notice the [Prjection Discriminator](https://openreview.net/forum?id=ByS1VpgRZ&noteId=r14W7yTrf), I plan to add this feature to this repo.
 
 
+**Update**
+
+The inception score is calculated using [older version](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/common/inception/inception_score_.py).
+
+However, the older version may not be correct as reported [here](https://github.com/openai/improved-gan/issues/29). So I add a new version of [Inception Score](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/common/inception/inception_score.py) (without training again using this new version.)
+
+
 # cifar-10
 
 

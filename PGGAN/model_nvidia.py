@@ -9,7 +9,7 @@ import tensorflow as tf
 import common as lib
 import common.ops.conv2d
 import common.ops.linear
-import common.ops.pixelnorm
+import common.ops.normalization
 
 
 def lrelu(x, leakiness=0.2):
@@ -86,13 +86,13 @@ class PGGAN(object):
             output = lib.ops.linear.Linear(z_var_, z_var_.shape.as_list()[-1], 4 * 4 * 512, 'G.Input',
                                            inputs_norm=self.inputs_norm)
             output = tf.reshape(output, [-1, 4, 4, 512])
-            output = lib.ops.pixelnorm.Pixelnorm(output)
+            output = lib.ops.normalization.pixel_norm(output)
             output = lrelu(output)
             print('G.Input: {}'.format(output.shape.as_list()))
             # (N, 4, 4, 512)
             output = lib.ops.conv2d.Conv2D(output, output.shape.as_list()[-1], 512, 3, 1, 'G.Conv',
                                            inputs_norm=self.inputs_norm, he_init=True, biases=True)
-            output = lib.ops.pixelnorm.Pixelnorm(output)
+            output = lib.ops.normalization.pixel_norm(output)
             output = lrelu(output)
             print('G.Conv: {}'.format(output.shape.as_list()))
 
