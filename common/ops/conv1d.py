@@ -13,31 +13,31 @@ def enable_default_weightnorm():
     _default_weightnorm = True
 
 
-def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None,
-           biases=True, gain=1.):
+def Conv1D(inputs, in_channels, output_channels, filter_size, stride=1, padding='SAME', he_init=True,
+           weight_norm=None, gain=1., mask_type=None, biases=True, name='Conv1D'):
     """
     Args:
-      name:
-      input_dim:
-      output_dim:
+      inputs: Tensor of shape (batch_size, in_width, in_channels)
+      in_channels:
+      output_channels:
       filter_size:
-      inputs: tensor of shape (batch size, num_channels, width)
-      he_init:
-      mask_type: one of None, 'a', 'b'
       stride:
-      weightnorm:
-      biases:
+      padding:
+      he_init:
+      weight_norm:
       gain:
+      mask_type: One of None, 'a', 'b'.
+      biases:
+      name:
 
     Returns:
-      tensor of shape (batch size, num channels, width)
     """
     with tf.variable_scope(name):
         if mask_type is not None:
             mask_type, mask_n_channels = mask_type
 
             mask = np.ones(
-                (filter_size, input_dim, output_dim),
+                (filter_size, in_channels, output_channels),
                 dtype='float32'
             )
             center = filter_size // 2
@@ -59,8 +59,8 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 size=size
             ).astype('float32')
 
-        fan_in = input_dim * filter_size
-        fan_out = output_dim * filter_size / stride
+        fan_in = in_channels * filter_size
+        fan_out = output_channels * filter_size / stride
 
         if mask_type is not None:  # only approximately correct
             fan_in /= 2.
@@ -73,7 +73,7 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
 
         filter_values = uniform(
             filters_stdev,
-            (filter_size, input_dim, output_dim)
+            (filter_size, in_channels, output_channels)
         )
         # print "WARNING IGNORING GAIN"
         filter_values *= gain
@@ -82,9 +82,9 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                                   dtype=tf.float32,
                                   initializer=filter_values)  # tf.glorot_uniform_initializer()
 
-        if weightnorm is None:
-            weightnorm = _default_weightnorm
-        if weightnorm:
+        if weight_norm is None:
+            weight_norm = _default_weightnorm
+        if weight_norm:
             norm_values = np.sqrt(np.sum(np.square(filter_values), axis=(0, 1)))
             target_norms = tf.get_variable(name='g',
                                            dtype=tf.float32,
@@ -101,12 +101,12 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             value=inputs,
             filters=filters,
             stride=stride,
-            padding='SAME',
-            data_format='NHWC'
+            padding=padding,
+            data_format='NWC'
         )
 
         if biases:
-            _biases = tf.get_variable(name='Biases', shape=[output_dim, ], dtype=tf.float32,
+            _biases = tf.get_variable(name='Biases', shape=[output_channels, ], dtype=tf.float32,
                                       initializer=tf.constant_initializer(0.))
 
             result = tf.expand_dims(result, 3)

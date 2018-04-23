@@ -1,9 +1,10 @@
 """
-Convolution for data in format of 'NWHC'.
+Origin implementation of conv2D.
 """
 
 import numpy as np
 import tensorflow as tf
+
 # import common as lib
 from common.ops.sn import spectral_normed_weight
 
@@ -29,23 +30,20 @@ def unset_weights_stdev():
 
 
 def Conv2D(inputs, input_dim, output_dim, filter_size=3, stride=1, name='Conv2D',
-           conv_type='conv2d', channel_multiplier=0, padding='SAME',
-           spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
-           mask_type=None, weightnorm=None, biases=True, gain=1.):
+           spectral_normed=False, update_collection=None, reuse=False, inputs_norm=False,
+           he_init=True, mask_type=None, weightnorm=None, biases=True, gain=1.):
     """
     Args:
-      inputs: Tensor of shape (batch size, height, width, in_channels).
-      input_dim: in_channels.
+      inputs: Tensor of shape (batch size, height, width, num_channels)
+      input_dim:
       output_dim:
       filter_size:
-      stride: Integer (for [1, stride, stride, 1]) or tuple/list.
+      stride:
       name:
-      conv_type: conv2d, depthwise_conv2d, separable_conv2d.
-      channel_multiplier:
-      padding:
       spectral_normed:
       update_collection:
-      inputs_norm: From PGGAN.
+      reuse:
+      inputs_norm:
       he_init:
       mask_type: One of None, 'a', 'b'.
       weightnorm:
@@ -53,13 +51,10 @@ def Conv2D(inputs, input_dim, output_dim, filter_size=3, stride=1, name='Conv2D'
       gain:
 
     Returns:
-      tensor of shape (batch_size, out_height, out_width, output_dim)
+      tensor of shape (batch size, height, width, num channels)
     """
     # with tf.name_scope(name) as scope:
     with tf.variable_scope(name):
-        if conv_type != "conv2d":
-            assert (channel_multiplier > 0, 'channel_multiplier should >0!')
-
         if mask_type is not None:
             mask_type, mask_n_channels = mask_type
 
@@ -103,52 +98,25 @@ def Conv2D(inputs, input_dim, output_dim, filter_size=3, stride=1, name='Conv2D'
         if he_init:
             filters_stdev = np.sqrt(4. / (fan_in + fan_out))
         else:  # Normalized init (Glorot & Bengio)
-            filters_stdev = np.sqrt(2. / (fan_in + fan_out))  # tf.glorot_uniform_initializer()
+            filters_stdev = np.sqrt(2. / (fan_in + fan_out))
 
         if _weights_stdev is not None:
             filter_values = uniform(
                 _weights_stdev,
                 (filter_size, filter_size, input_dim, output_dim)
             )
-
-            if channel_multiplier > 0:
-                depthwise_filter_values = uniform(
-                    _weights_stdev,
-                    ([filter_size, filter_size, input_dim, channel_multiplier])
-                )
-                pointwise_filter_values = uniform(
-                    _weights_stdev,
-                    ([1, 1, input_dim * channel_multiplier, output_dim])
-                )
         else:
             filter_values = uniform(
                 filters_stdev,
                 (filter_size, filter_size, input_dim, output_dim)
             )
 
-            if channel_multiplier > 0:
-                depthwise_filter_values = uniform(
-                    filters_stdev,
-                    (filter_size, filter_size, input_dim, channel_multiplier)
-                )
-                pointwise_filter_values = uniform(
-                    filters_stdev,
-                    (1, 1, input_dim * channel_multiplier, output_dim)
-                )
-
         # print "WARNING IGNORING GAIN"
         filter_values *= gain
 
         filters = tf.get_variable(name='Filters',
                                   dtype=tf.float32,
-                                  initializer=filter_values)
-        if channel_multiplier > 0:
-            depthwise_filters = tf.get_variable(name='depthwise_filters',
-                                                dtype=tf.float32,
-                                                initializer=depthwise_filter_values)
-            pointwise_filters = tf.get_variable(name='pointwise_filters',
-                                                dtype=tf.float32,
-                                                initializer=pointwise_filter_values)
+                                  initializer=filter_values)  # tf.glorot_uniform_initializer()
 
         if weightnorm is None:
             weightnorm = _default_weightnorm
@@ -167,47 +135,21 @@ def Conv2D(inputs, input_dim, output_dim, filter_size=3, stride=1, name='Conv2D'
                 filters = filters * mask
 
         if spectral_normed:
-            with tf.variable_scope('filters'):
-                filters = spectral_normed_weight(filters, update_collection=update_collection)
-
-            if channel_multiplier > 0:
-                with tf.variable_scope('depthwise_filters'):
-                    depthwise_filters = spectral_normed_weight(depthwise_filters, update_collection=update_collection)
-
-                with tf.variable_scope('pointwise_filters'):
-                    pointwise_filters = spectral_normed_weight(pointwise_filters, update_collection=update_collection)
-
-        if conv_type == 'conv2d':
+            result = tf.nn.conv2d(
+                input=inputs_,
+                filter=spectral_normed_weight(filters, update_collection=update_collection),
+                strides=[1, stride, stride, 1],
+                padding='SAME',
+                data_format='NHWC'
+            )
+        else:
             result = tf.nn.conv2d(
                 input=inputs_,
                 filter=filters,
                 strides=[1, stride, stride, 1],
-                padding=padding,
+                padding='SAME',
                 data_format='NHWC'
             )
-        elif conv_type == 'depthwise_conv2d':
-            result = tf.nn.depthwise_conv2d(
-                input=inputs_,
-                filter=depthwise_filters,
-                strides=[1, stride, stride, 1],
-                padding=padding,
-                rate=None,
-                name=None,
-                data_format='NHWC'
-            )
-        elif conv_type == 'separable_conv2d':
-            result = tf.nn.separable_conv2d(
-                inputs_,
-                depthwise_filter=depthwise_filters,
-                pointwise_filter=pointwise_filters,
-                strides=[1, stride, stride, 1],
-                padding=padding,
-                rate=None,
-                name=None,
-                data_format='NHWC'
-            )
-        else:
-            raise NotImplementedError('{0} is not supported!'.format(conv_type))
 
         if biases:
             _biases = tf.get_variable(name='Biases', shape=[output_dim, ], dtype=tf.float32,
