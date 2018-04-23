@@ -40,6 +40,7 @@ def inception_logits(images=inception_images, num_splits=1):
         swap_memory=True,
         name='RunClassifier')
     logits_ = array_ops.concat(array_ops.unstack(logits_), 0)
+
     return logits_
 
 
@@ -69,17 +70,21 @@ def preds2score(preds, splits):
 
 
 def get_inception_score(images, splits=10):
+    images = np.asarray(images)
+    if np.max(images[0]) > 1.01:
+        images = 2 * (images / 255. - 0.5)
     assert (type(images) == np.ndarray)
-    assert (len(images.shape) == 4)
-    assert (images.shape[1] == 3)
-    assert (np.max(images[0]) <= 1)
+    assert (len(images.shape) == 4)  # [batch_size, height, width, channel]
+    assert (images.shape[3] == 3)  # last channel count is 3.
+    assert (np.max(images[0]) <= 1)  # [-1, 1]
     assert (np.min(images[0]) >= -1)
 
     start_time = time.time()
     preds = get_inception_probs(images)
-    print('Inception Score for %i samples in %i splits' % (preds.shape[0], splits))
     mean, std = preds2score(preds, splits)
-    print('Inception Score calculation time: %f s' % (time.time() - start_time))
+    # print('Inception Score calculation time: %f s' % (time.time() - start_time))
+    print('Inception Score for %i samples in %i splits (cost %f s):' %
+          (preds.shape[0], splits, (time.time() - start_time)))
     # Reference values: 11.34 for 49984 CIFAR-10 training set images,
     # or mean=11.31, std=0.08 if in 10 splits (default).
     return mean, std
