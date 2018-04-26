@@ -20,7 +20,7 @@ Please refer to corresponding folder for more details.
 | Real data  | 12.0 | 11.24 | 3.2 (train vs test) |
 | [PGGAN](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/tree/master/PGGAN)  | - | 8.80 ± 0.05 (-, Unsupervised) | - |
 | [SNGAN](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/tree/master/SNGAN)  | 8.43 ± 0.12 (ResNet, Supervised) | 8.24 ± 0.08 (ResNet, Unsupervised) | - |
-| [ACGAN](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/tree/master/ACGAN)  | 7.83 ± 0.07 (ResNet, Supervised) |  8.25 ± 0.07 (-, Supervised) | - |
+| [ACGAN](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/tree/master/ACGAN)  | 7.86 ± 0.09 (ResNet, Supervised) |  8.25 ± 0.07 (-, Supervised) | - |
 
 
 Inception scores are calculated by average of 10 evaluation with 5000 samples.
@@ -41,7 +41,7 @@ Inception scores are calculated by average of 10 evaluation with 5000 samples.
 
 - ACGAN
 
-    ![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/samples_98999.png)
+    ![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/samples.png)
 
 
 
