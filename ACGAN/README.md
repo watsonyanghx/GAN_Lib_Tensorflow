@@ -26,7 +26,7 @@ The inception_50k_std curve:
 
 ### Inception Score
 
-The **inception_50k** is : `7.831849098205566 ± 0.07496337592601776`, the inception score can be improved by changint nerwork architecture or tuning hyperparameters.
+The **inception_50k** is : `7.865674018859863, ± 0.09258274734020233`, the inception score can be improved by changint nerwork architecture or tuning hyperparameters.
 
 I really don't konw how to improve it, if you know how to fix this, a PR is welcomed.
 
@@ -41,9 +41,10 @@ CUDA_VISIBLE_DEVICES=0 python ACGAN/train.py \
   --max_iter=100000 \
   --loss_type='WGAN-GP' \
   --n_dis=5 \
-  --acgan_scale_G=0.1 \
-  --data_dir='/home/yhx/sn_gan/cifar-10'
+  --acgan_scale_G=0.4 \
+  --data_dir='/home/yhx/gan_lib/cifar-10'
 
+// adam超参数改为使用wgan-gp的设定
 ```
 
 

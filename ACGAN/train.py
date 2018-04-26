@@ -136,14 +136,14 @@ def train():
 
     global_step = tf.Variable(0, trainable=False)
     tf.summary.scalar('global_step', global_step)
-    # learning_rate = tf.train.polynomial_decay(0.0002, global_step, args.max_iter // 2 * args.n_dis, 0.0001)
-    # tf.summary.scalar('learning_rate', learning_rate)
-    g_opt = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5, beta2=0.999, epsilon=1e-8)
-    # g_opt = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0., beta2=0.9, epsilon=1e-8)
+    learning_rate = tf.train.polynomial_decay(0.0004, global_step, args.max_iter // 2, 0.0002)
+    tf.summary.scalar('learning_rate', learning_rate)
+    # g_opt = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5, beta2=0.999, epsilon=1e-8)
+    g_opt = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0., beta2=0.9, epsilon=1e-8)
     g_train_op = g_opt.minimize(loss=g_loss, var_list=g_vars, global_step=global_step)
-    d_opt = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.5, beta2=0.999, epsilon=1e-8)
-    # d_opt = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0., beta2=0.9, epsilon=1e-8)
-    d_train_op = d_opt.minimize(loss=d_loss, var_list=d_vars, global_step=global_step)
+    # d_opt = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.5, beta2=0.999, epsilon=1e-8)
+    d_opt = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0., beta2=0.9, epsilon=1e-8)
+    d_train_op = d_opt.minimize(loss=d_loss, var_list=d_vars)
 
     # Function for generating samples
     fixed_z = tf.constant(lib.misc.get_z(100, n_hidden=args.z_dim), dtype=tf.float32)
@@ -175,7 +175,7 @@ def train():
 
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allow_growth = True
-    with tf.Session() as sess:
+    with tf.Session(config=config) as sess:
         summary_writer = tf.summary.FileWriter(args.checkpoint_dir, sess.graph)
         sess.run(tf.global_variables_initializer())
 
