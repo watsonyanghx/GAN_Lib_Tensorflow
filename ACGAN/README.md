@@ -9,7 +9,7 @@ Code for paper: [Conditional Image Synthesis With Auxiliary Classifier GANs](htt
 
 The image generated:
 
-![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/samples_98999.png)
+![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/samples.png)
 
 There are 10 columns with each corresponding to one label, in the same column, **only** the random noise is different.
 
