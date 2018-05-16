@@ -1,9 +1,9 @@
 """
 Networks for GAN Pix2Pix.
 
-1. Instance Normalization in G and D.
+1. Instance Normalization in G only (uncomment 251 and comment 252 to use IN in G and D).
 2. Hinge loss.
-3. Spectural Normalization in D only.
+3. Spectral Normalization in D only.
 
 """
 
@@ -248,8 +248,8 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
                                               he_init=True, biases=True)
 
             # normalized = batchnorm(convolved)
-            normalized = norm_layer(convolved, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
-            # normalized = convolved
+            # normalized = norm_layer(convolved, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
+            normalized = convolved
             rectified = nonlinearity(normalized, 'lrelu', 0.2)
             layers.append(rectified)
 
