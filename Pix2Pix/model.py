@@ -37,6 +37,14 @@ class Pix2Pix(object):
                                                    conv_type=conv_type,
                                                    channel_multiplier=channel_multiplier,
                                                    padding=padding)
+            elif net_type == 'VGG':
+                output = networks.vgg_generator(inputs, outputs_channels, ngf,
+                                                conv_type=conv_type,
+                                                channel_multiplier=channel_multiplier,
+                                                padding=padding,
+                                                train_mode=None,
+                                                trainable=None,
+                                                vgg19_npy_path='/home/yhx/vgg19.npy')
             else:
                 raise NotImplementedError('Generator model name [%s] is not recognized' % net_type)
 
@@ -65,10 +73,15 @@ class Pix2Pix(object):
                                                      channel_multiplier=channel_multiplier,
                                                      padding=padding)
             elif net_type == 'ResNet':
-                output = networks.resnet_generator(inputs, targets, ndf, spectral_normed, update_collection,
-                                                   conv_type=conv_type,
-                                                   channel_multiplier=channel_multiplier,
-                                                   padding=padding)
+                output = networks.resnet_discriminator(inputs, targets, ndf, spectral_normed, update_collection,
+                                                       conv_type=conv_type,
+                                                       channel_multiplier=channel_multiplier,
+                                                       padding=padding)
+            elif net_type == 'VGG':
+                output = networks.vgg_discriminator(inputs, targets, ndf, spectral_normed, update_collection,
+                                                    conv_type=conv_type,
+                                                    channel_multiplier=channel_multiplier,
+                                                    padding=padding)
             else:
                 raise NotImplementedError('Discriminator model name [%s] is not recognized' % net_type)
 

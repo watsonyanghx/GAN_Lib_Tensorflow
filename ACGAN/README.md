@@ -33,7 +33,7 @@ I really don't konw how to improve it, if you know how to fix this, a PR is welc
 
 ### How to run:
 
-``` python
+```
 # cd to `ACGAN` folder and run command bellow
 CUDA_VISIBLE_DEVICES=0 python ACGAN/train.py \
   --batch_size=64 \

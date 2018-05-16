@@ -1,5 +1,5 @@
 """
-Concat webpage features to real A image.
+Concat features to real A image.
 """
 # -*- coding: utf-8 -*-
 
