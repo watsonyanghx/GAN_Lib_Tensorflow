@@ -461,6 +461,8 @@ def vgg_generator(generator_inputs, generator_outputs_channels, ngf, conv_type, 
     bgr_output = lib.ops.conv2d.Conv2D(conv1_2_decoder, conv1_2_decoder.shape.as_list()[-1], 3, 3, 1,
                                        "bgr_output", he_init=True, biases=True)
 
+    bgr_output = tf.nn.tanh(bgr_output)
+
     # convert bgr to rgb
     b, g, r = tf.split(bgr_output, 3, axis=3)
     rgb = tf.concat([r, g, b], axis=3)
