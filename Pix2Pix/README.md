@@ -55,7 +55,7 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
 
 
 ---- VGG ----
-CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
+CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='train' \
   --conv_type='conv2d' \

@@ -1,7 +1,7 @@
 """
 Networks for GAN Pix2Pix.
 
-1. Instance Normalization in G only.
+1. Instance Normalization in G only (uncomment 251 and comment 252 to use IN in G and D).
 2. Hinge loss.
 3. Spectral Normalization in D only.
 
