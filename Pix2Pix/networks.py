@@ -219,7 +219,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
             output = norm_layer(convolved, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
             # output = convolved
 
-            output = Self_Attn(output)  # attention module
+            output, attn_score = Self_Attn(output)  # attention module
 
             layers.append(output)
 
@@ -268,7 +268,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
 
             output = norm_layer(output, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
 
-            output = Self_Attn(output)  # attention module
+            output, attn_score = Self_Attn(output)  # attention module
 
             if dropout > 0.0:
                 output = tf.nn.dropout(output, keep_prob=1 - dropout)
