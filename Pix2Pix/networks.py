@@ -58,7 +58,7 @@ def Self_Attn(x, pixel_wise=True):
     f_size = x.shape.as_list()[1]
     in_dim = x.shape.as_list()[-1]
 
-    gamma = tf.get_variable(name='gamma', shape=None, dtype=tf.float32, initializer=tf.zeros_initializer())
+    gamma = tf.get_variable(name='gamma', shape=[1], dtype=tf.float32, initializer=tf.zeros_initializer())
 
     if pixel_wise:
         # [b_size, f_size, f_size, int(in_dim / 8)*f_size*f_size]
