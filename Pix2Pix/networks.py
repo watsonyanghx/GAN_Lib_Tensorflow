@@ -58,7 +58,7 @@ def Self_Attn(x, pixel_wise=True):
     f_size = x.shape.as_list()[1]
     in_dim = x.shape.as_list()[-1]
 
-    gamma = tf.zeros([b_size, 1, 1, 1], dtype=tf.float32)
+    gamma = tf.get_variable(name='gamma', shape=None, dtype=tf.float32, initializer=tf.zeros_initializer())
 
     if pixel_wise:
         # [b_size, f_size, f_size, int(in_dim / 8)*f_size*f_size]
@@ -219,7 +219,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
             output = norm_layer(convolved, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
             # output = convolved
 
-            # output = Self_Attn(output)  # attention module
+            output = Self_Attn(output)  # attention module
 
             layers.append(output)
 
@@ -268,7 +268,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
 
             output = norm_layer(output, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
 
-            # output = Self_Attn(output)  # attention module
+            output = Self_Attn(output)  # attention module
 
             if dropout > 0.0:
                 output = tf.nn.dropout(output, keep_prob=1 - dropout)
