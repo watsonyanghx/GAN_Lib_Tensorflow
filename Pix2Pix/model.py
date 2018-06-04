@@ -13,7 +13,7 @@ class Pix2Pix(object):
         """
 
     def get_generator(self, inputs, outputs_channels, ngf=64, conv_type='conv2d', channel_multiplier=None,
-                      padding='SAME', net_type='UNet', reuse=False):
+                      padding='SAME', net_type='UNet', reuse=False, upsampe_method='depth_to_space'):
         """g-net
         Args:
           inputs:
@@ -24,6 +24,7 @@ class Pix2Pix(object):
           padding:
           net_type:
           reuse:
+          upsampe_method:
         Return:
         """
         with tf.variable_scope('g_net', reuse=reuse):
@@ -31,7 +32,8 @@ class Pix2Pix(object):
                 output = networks.unet_generator(inputs, outputs_channels, ngf,
                                                  conv_type=conv_type,
                                                  channel_multiplier=channel_multiplier,
-                                                 padding=padding)
+                                                 padding=padding,
+                                                 upsampe_method=upsampe_method)
             elif net_type == 'ResNet':
                 output = networks.resnet_generator(inputs, outputs_channels, ngf,
                                                    conv_type=conv_type,
@@ -51,7 +53,8 @@ class Pix2Pix(object):
         return output
 
     def get_discriminator(self, inputs, targets, ndf=64, spectral_normed=True, update_collection=None,
-                          conv_type='conv2d', channel_multiplier=None, padding='SAME', net_type='UNet', reuse=False):
+                          conv_type='conv2d', channel_multiplier=None, padding='SAME', net_type='UNet',
+                          reuse=False):
         """d-net
         Args:
           inputs: real A image.

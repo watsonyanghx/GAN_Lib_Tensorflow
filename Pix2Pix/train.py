@@ -71,13 +71,15 @@ parser.add_argument("--output_filetype", default="png", choices=["png", "jpeg"])
 parser.add_argument("--multiple_A", dest="multiple_A", action="store_true",
                     help="whether the input is multiple A images")
 parser.add_argument('--net_type', dest="net_type", type=str, default="UNet", help='')
+parser.add_argument('--upsampe_method', dest="upsampe_method", type=str, default="depth_to_space",
+                    help='depth_to_space, resize')
 
 args = parser.parse_args()
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
 EPS = 1e-12
-CROP_SIZE = 512  # 256, 512
+CROP_SIZE = 1024  # 256, 512, 1024
 
 Examples = collections.namedtuple("Examples", "paths, inputs, targets, count, steps_per_epoch")
 Model = collections.namedtuple("Model",
@@ -385,7 +387,8 @@ def create_model(inputs, targets, max_steps):
                                   conv_type=args.conv_type,
                                   channel_multiplier=args.channel_multiplier,
                                   padding='SAME',
-                                  net_type=args.net_type, reuse=False)
+                                  net_type=args.net_type, reuse=False,
+                                  upsampe_method=args.upsampe_method)
 
     with tf.name_scope("real_discriminator"):
         # 2x [batch, height, width, channels] => [batch, 30, 30, 1]
@@ -556,7 +559,8 @@ def train():
                                                       ngf=args.ngf,
                                                       conv_type=args.conv_type,
                                                       channel_multiplier=args.channel_multiplier,
-                                                      padding='SAME'))
+                                                      padding='SAME',
+                                                      upsampe_method=args.upsampe_method))
         # with tf.variable_scope("generator"):
         #     batch_output = deprocess(model.get_generator(preprocess(batch_input), 3))
 

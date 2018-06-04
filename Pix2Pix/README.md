@@ -37,7 +37,8 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --scale_size=572 \
   --l1_weight=20.0 \
   --gan_weight=1.0 \
-  --multiple_A
+  --multiple_A \
+  --upsampe_method=depth_to_space
 
 # infer
 CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
@@ -51,7 +52,8 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --ndf=128 \
   --scale_size=572 \
   --checkpoint_dir=../output_train \
-  --multiple_A
+  --multiple_A \
+  --upsampe_method=depth_to_space
 
 
 ---- VGG ----
@@ -76,7 +78,8 @@ CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --scale_size=572 \
   --l1_weight=20.0 \
   --gan_weight=1.0 \
-  --net_type='VGG'
+  --net_type='VGG' \
+  --upsampe_method=depth_to_space
 
 # infer
 CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
@@ -86,14 +89,53 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/test \
   --output_dir=../output_test_512 \
   --which_direction=AtoB \
-  --ngf=128 \
-  --ndf=128 \
+  --ngf=64 \
+  --ndf=64 \
   --scale_size=572 \
   --checkpoint_dir=../output_train_vgg \
-  --net_type='VGG'
+  --net_type='VGG' \
+  --upsampe_method=depth_to_space
 
 
 ----- depth_to_space -----
+# 512
+CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
+  --batch_size=1 \
+  --mode='train' \
+  --conv_type='conv2d' \
+  --channel_multiplier=0 \
+  --initial_lr=0.0002 \
+  --end_lr=0.0001 \
+  --beta1=0. \
+  --beta2=0.9 \
+  --loss_type='HINGE' \
+  --n_dis=5 \
+  --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/train \
+  --output_dir=../output_train \
+  --max_epochs=400 \
+  --which_direction=AtoB \
+  --save_freq=2360 \
+  --ngf=128 \
+  --ndf=128 \
+  --scale_size=572 \
+  --l1_weight=20.0 \
+  --gan_weight=1.0 \
+  --upsampe_method=depth_to_space
+
+# infer
+CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
+  --batch_size=1 \
+  --mode='test' \
+  --conv_type='conv2d' \
+  --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/test \
+  --output_dir=../output_test_512 \
+  --which_direction=AtoB \
+  --scale_size=572 \
+  --checkpoint_dir=../output_train \
+  --upsampe_method=depth_to_space
+
+
+# 1024
 CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='train' \
@@ -107,25 +149,42 @@ CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --n_dis=5 \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/train \
   --output_dir=../output_train \
-  --max_epochs=200 \
+  --max_epochs=400 \
   --which_direction=AtoB \
   --save_freq=2360 \
   --ngf=64 \
   --ndf=64 \
-  --scale_size=572 \
+  --scale_size=1144 \
   --l1_weight=20.0 \
-  --gan_weight=1.0
+  --gan_weight=1.0 \
+  --upsampe_method=resize
 
-# infer
-CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
+
+
+
+----- depth_to_space, 1024, attention -----
+CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --batch_size=1 \
-  --mode='test' \
+  --mode='train' \
   --conv_type='conv2d' \
-  --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/test \
-  --output_dir=../output_test_512 \
+  --channel_multiplier=0 \
+  --initial_lr=0.0002 \
+  --end_lr=0.0001 \
+  --beta1=0. \
+  --beta2=0.9 \
+  --loss_type='HINGE' \
+  --n_dis=5 \
+  --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/train \
+  --output_dir=../output_train \
+  --max_epochs=400 \
   --which_direction=AtoB \
-  --scale_size=572 \
-  --checkpoint_dir=/home/yhx/webpageSaliency/code/depth_to_space
+  --save_freq=2360 \
+  --ngf=64 \
+  --ndf=64 \
+  --scale_size=1144 \
+  --l1_weight=20.0 \
+  --gan_weight=1.0 \
+  --upsampe_method=resize
 
 
 

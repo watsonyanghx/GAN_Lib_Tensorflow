@@ -42,6 +42,80 @@ def norm_layer(inputs, decay=0.9, epsilon=1e-5, is_training=True, norm_type="BN"
     return outputs
 
 
+def Self_Attn(x, pixel_wise=True):
+    """
+
+    Args:
+      x: [b_size, f_size, f_size, in_dim]
+      pixel_wise:
+
+      attn_score: [batch_size, feature_size, feature_size]
+    Return:
+      [batch_size, feature_depth, feature_size, feature_size]
+    """
+
+    b_size = x.shape.as_list()[0]
+    f_size = x.shape.as_list()[1]
+    in_dim = x.shape.as_list()[-1]
+
+    gamma = tf.zeros([b_size, 1, 1, 1], dtype=tf.float32)
+
+    if pixel_wise:
+        # [b_size, f_size, f_size, int(in_dim / 8)*f_size*f_size]
+        f_x = \
+            lib.ops.conv2d.Conv2D(x, in_dim, int(in_dim / 8) * (f_size ** 2), filter_size=1, stride=1,
+                                  name='Conv2D.f_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
+                                  spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
+                                  mask_type=None, weightnorm=None, biases=True, gain=1.)
+        f_x = tf.transpose(f_x, [0, 3, 1, 2])  # [b_size, int(in_dim / 8)*f_size*f_size, f_size, f_size]
+
+        # [N, f_size, f_size, int(in_dim / 8) * imsize * imsize]
+        g_x = \
+            lib.ops.conv2d.Conv2D(x, in_dim, int(in_dim / 8) * (f_size ** 2), filter_size=1, stride=1,
+                                  name='Conv2D.g_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
+                                  spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
+                                  mask_type=None, weightnorm=None, biases=True, gain=1.)
+        g_x = tf.transpose(g_x, [0, 3, 1, 2])  # [b_size, int(in_dim / 8)*f_size*f_size, f_size, f_size]
+
+        # [N, f_size, f_size, in_dim]
+        h_x = \
+            lib.ops.conv2d.Conv2D(x, in_dim, in_dim, filter_size=1, stride=1,
+                                  name='Conv2D.h_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
+                                  spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
+                                  mask_type=None, weightnorm=None, biases=True, gain=1.)
+        h_x = tf.transpose(h_x, [0, 3, 1, 2])
+        # [b_size, in_dim, f_size**2, f_size, f_size]
+        h_x = tf.tile(tf.expand_dims(h_x, axis=2), [1, 1, f_size ** 2, 1, 1])
+        # [b_size, in_dim, f_size**2, f_size**2]
+        h_x = tf.reshape(h_x, [b_size, -1, f_size ** 2, f_size ** 2])
+
+        # [b_size, int(in_dim / 8), f_size*f_size, f_size2, f_size1]
+        f_ready = tf.reshape(f_x, [b_size, -1, f_size ** 2, f_size, f_size])
+        f_ready = tf.transpose(f_ready, [0, 1, 2, 4, 3])
+
+        # [b_size, int(in_dim / 8), f_size*f_size, f_size1, f_size2]
+        g_ready = tf.reshape(g_x, [b_size, -1, f_size ** 2, f_size, f_size])
+
+        # [b_size * f_size**2, f_size ** 2]
+        attn_dist = tf.reshape(
+            tf.reduce_sum(tf.multiply(f_ready, g_ready), axis=1), (-1, f_size ** 2))
+        # [b_size, f_size**2, f_size**2]
+        attn_soft = tf.reshape(
+            tf.nn.softmax(attn_dist, axis=1), (b_size, f_size ** 2, f_size ** 2))
+        # [b_size, 1, f_size**2, f_size**2]
+        attn_score = tf.expand_dims(attn_soft, axis=1)
+
+        # [b_size, in_dim, f_size, f_size]
+        self_attn_map = tf.reshape(
+            tf.reduce_sum(tf.multiply(h_x, attn_score), axis=3), [b_size, -1, f_size, f_size])
+        # [b_size, f_size, f_size, in_dim]
+        self_attn_map = tf.transpose(self_attn_map, [0, 2, 3, 1])
+
+        self_attn_map = gamma * self_attn_map + x
+
+        return self_attn_map, attn_score
+
+
 def resnet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type, channel_multiplier, padding):
     """
 
@@ -144,6 +218,9 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
             # output = batchnorm(convolved)
             output = norm_layer(convolved, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
             # output = convolved
+
+            # output = Self_Attn(output)  # attention module
+
             layers.append(output)
 
     layer_specs = [
@@ -190,6 +267,8 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
             # output = batchnorm(output)
 
             output = norm_layer(output, decay=0.9, epsilon=1e-5, is_training=True, norm_type="IN")
+
+            # output = Self_Attn(output)  # attention module
 
             if dropout > 0.0:
                 output = tf.nn.dropout(output, keep_prob=1 - dropout)
