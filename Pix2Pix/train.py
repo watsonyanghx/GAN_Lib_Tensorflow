@@ -79,7 +79,7 @@ args = parser.parse_args()
 tf.logging.set_verbosity(tf.logging.INFO)
 
 EPS = 1e-12
-CROP_SIZE = 1024  # 256, 512, 1024
+CROP_SIZE = 512  # 256, 512, 1024
 
 Examples = collections.namedtuple("Examples", "paths, inputs, targets, count, steps_per_epoch")
 Model = collections.namedtuple("Model",
@@ -688,7 +688,7 @@ def train():
         parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()])
 
     summary_op = tf.summary.merge_all()
-    saver = tf.train.Saver(max_to_keep=5)
+    saver = tf.train.Saver(max_to_keep=10)
 
     config = tf.ConfigProto(allow_soft_placement=True)
     config.gpu_options.allow_growth = True

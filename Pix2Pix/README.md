@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --n_dis=5 \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/train \
   --output_dir=../output_train \
-  --max_epochs=300 \
+  --max_epochs=400 \
   --which_direction=AtoB \
   --save_freq=2360 \
   --ngf=128 \
@@ -39,6 +39,9 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --gan_weight=1.0 \
   --multiple_A \
   --upsampe_method=depth_to_space
+
+
+
 
 # infer
 CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
@@ -122,7 +125,6 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --gan_weight=1.0 \
   --upsampe_method=depth_to_space
 
-# infer
 CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='test' \
@@ -159,10 +161,21 @@ CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --gan_weight=1.0 \
   --upsampe_method=resize
 
+CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
+  --batch_size=1 \
+  --mode='test' \
+  --conv_type='conv2d' \
+  --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data/test \
+  --output_dir=../output_test_1024 \
+  --which_direction=AtoB \
+  --scale_size=1144 \
+  --checkpoint_dir=../output_train \
+  --upsampe_method=resize
 
 
 
------ depth_to_space, 1024, attention -----
+
+----- depth_to_space, 512, attention -----
 CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='train' \
@@ -181,9 +194,10 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --save_freq=2360 \
   --ngf=64 \
   --ndf=64 \
-  --scale_size=1144 \
+  --scale_size=572 \
   --l1_weight=20.0 \
   --gan_weight=1.0 \
+  --net_type='UNet_Attention' \
   --upsampe_method=resize
 
 
