@@ -397,7 +397,7 @@ def create_model(inputs, targets, max_steps):
                                                update_collection=None,
                                                conv_type=args.conv_type,
                                                channel_multiplier=args.channel_multiplier,
-                                               padding='SAME',
+                                               padding='VALID',
                                                net_type=args.net_type, reuse=False)
 
     with tf.name_scope("fake_discriminator"):
@@ -407,7 +407,7 @@ def create_model(inputs, targets, max_steps):
                                                update_collection=None,
                                                conv_type=args.conv_type,
                                                channel_multiplier=args.channel_multiplier,
-                                               padding='SAME',
+                                               padding='VALID',
                                                net_type=args.net_type, reuse=True)
 
     with tf.name_scope("discriminator_loss"):
@@ -430,7 +430,7 @@ def create_model(inputs, targets, max_steps):
                                         update_collection=None,
                                         conv_type=args.conv_type,
                                         channel_multiplier=args.channel_multiplier,
-                                        padding='SAME',
+                                        padding='VALID',
                                         net_type=args.net_type, reuse=True), [interpolates])[0]
             slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3]) + 1e-10)
             gradient_penalty = 10 * tf.reduce_mean(tf.square((slopes - 1.)))

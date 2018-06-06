@@ -59,7 +59,7 @@ class Pix2Pix(object):
         return output
 
     def get_discriminator(self, inputs, targets, ndf=64, spectral_normed=True, update_collection=None,
-                          conv_type='conv2d', channel_multiplier=None, padding='SAME', net_type='UNet',
+                          conv_type='conv2d', channel_multiplier=None, padding='VALID', net_type='UNet',
                           reuse=False):
         """d-net
         Args:

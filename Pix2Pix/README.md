@@ -16,7 +16,7 @@ Heavily based on code (affinelayer/pix2pix-tensorflow)[https://github.com/affine
 # train
 # cd to `Pix2Pix` folder and run command bellow
 ---- webpage, 2A ----
-CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
+CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='train' \
   --conv_type='conv2d' \
@@ -28,19 +28,17 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --loss_type='HINGE' \
   --n_dis=5 \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/train \
-  --output_dir=../output_train \
+  --output_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train_new \
   --max_epochs=400 \
   --which_direction=AtoB \
   --save_freq=2360 \
-  --ngf=128 \
-  --ndf=128 \
+  --ngf=64 \
+  --ndf=64 \
   --scale_size=572 \
   --l1_weight=20.0 \
   --gan_weight=1.0 \
   --multiple_A \
   --upsampe_method=depth_to_space
-
-
 
 
 # infer
@@ -51,12 +49,14 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/val \
   --output_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/output_test_512 \
   --which_direction=AtoB \
-  --ngf=128 \
-  --ndf=128 \
+  --ngf=64 \
+  --ndf=64 \
   --scale_size=572 \
-  --checkpoint_dir=../output_train \
+  --checkpoint_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train \
   --multiple_A \
   --upsampe_method=depth_to_space
+
+
 
 
 ---- VGG ----
@@ -98,6 +98,8 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --checkpoint_dir=../output_train_vgg \
   --net_type='VGG' \
   --upsampe_method=depth_to_space
+
+
 
 
 ----- depth_to_space -----
