@@ -28,7 +28,7 @@ CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --loss_type='HINGE' \
   --n_dis=5 \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/train \
-  --output_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train_new \
+  --output_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train_new2 \
   --max_epochs=400 \
   --which_direction=AtoB \
   --save_freq=2360 \
@@ -47,12 +47,12 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --mode='test' \
   --conv_type='conv2d' \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/val \
-  --output_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/output_test_512 \
+  --output_dir=../output_test_512 \
   --which_direction=AtoB \
   --ngf=64 \
   --ndf=64 \
   --scale_size=572 \
-  --checkpoint_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train \
+  --checkpoint_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train_new \
   --multiple_A \
   --upsampe_method=depth_to_space
 
