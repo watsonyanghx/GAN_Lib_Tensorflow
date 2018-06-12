@@ -379,7 +379,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
 
     # encoder_1: [batch, 512, 512, in_channels] => [batch, 256, 256, ngf]
     with tf.variable_scope("encoder_1"):
-        output = lib.ops.conv2d.Conv2D(generator_inputs, 6, ngf, 4, 2, 'Conv2D',
+        output = lib.ops.conv2d.Conv2D(generator_inputs, generator_inputs.shape.as_list()[-1], ngf, 4, 2, 'Conv2D',
                                        conv_type=conv_type, channel_multiplier=channel_multiplier, padding=padding,
                                        spectral_normed=False, update_collection=None, inputs_norm=False,
                                        he_init=True, biases=True)
@@ -491,7 +491,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
 
 def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, update_collection,
                        conv_type, channel_multiplier, padding):
-    n_layers = 5
+    n_layers = 4
     layers = []
 
     # 2x [batch, height, width, in_channels] => [batch, height, width, in_channels * 2]
@@ -500,7 +500,7 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
     # layer_1: [batch, 512, 512, in_channels * 2] => [batch, 256, 256, ndf]
     with tf.variable_scope("layer_1"):
         padded_input = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
-        convolved = lib.ops.conv2d.Conv2D(padded_input, 9, ndf, 4, 2,
+        convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], ndf, 4, 2,
                                           'Conv2D',
                                           conv_type=conv_type, channel_multiplier=channel_multiplier, padding=padding,
                                           spectral_normed=spectral_normed,
@@ -514,13 +514,11 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
     # layer_2: [batch, 256, 256, ndf] => [batch, 128, 128, ndf * 2]
     # layer_3: [batch, 128, 128, ndf * 2] => [batch, 64, 64, ndf * 4]
     # layer_4: [batch, 64, 64, ndf * 4] => [batch, 32, 32, ndf * 8]
-    # layer_5: [batch, 32, 32, ndf * 4] => [batch, 16, 16, ndf * 8]
-    # layer_6: [batch, 16, 16, ndf * 4] => [batch, 8, 8, ndf * 8]
+    # layer_5: [batch, 32, 32, ndf * 4] => [batch, 31, 31, ndf * 8]
     for i in range(n_layers):
         with tf.variable_scope("layer_%d" % (len(layers) + 1)):
             out_channels_ = ndf * min(2 ** (i + 1), 8)
-            # stride = 1 if i == n_layers - 1 else 2  # last layer here has stride 1
-            stride = 2  # last layer here has stride 1
+            stride = 1 if i == n_layers - 1 else 2  # last layer here has stride 1
             padded_input = tf.pad(layers[-1], [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
             convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], out_channels_, 4, stride,
                                               'Conv2D',
@@ -537,10 +535,10 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
 
             layers.append(rectified)
 
-    # layer_7: [batch, 8, 8, ndf * 8] => [batch, 7, 7, ndf * 2]
+    # layer_6: [batch, 31, 31, ndf * 8] => [batch, 30, 30, 1]
     with tf.variable_scope("layer_%d" % (len(layers) + 1)):
         padded_input = tf.pad(rectified, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
-        convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], ndf * 2, 4, 1,
+        convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], 1, 4, 1,
                                           'Conv2D',
                                           conv_type=conv_type, channel_multiplier=channel_multiplier, padding=padding,
                                           spectral_normed=spectral_normed,
@@ -549,17 +547,6 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
                                           he_init=True, biases=True)
         # output = tf.sigmoid(convolved)
         output = convolved
-
-        layers.append(output)
-
-    # layer_8: [batch, 7, 7, ndf * 2] => [batch, 1]
-    with tf.variable_scope("layer_%d" % (len(layers) + 1)):
-        output = nonlinearity(output, 'lrelu', 0.2)
-        output = tf.reduce_mean(output, axis=[1, 2])
-        output = lib.ops.linear.Linear(output, output.shape.as_list()[-1], 1, 'D.Output',
-                                       spectral_normed=spectral_normed,
-                                       update_collection=update_collection)
-        output = tf.reshape(output, [-1])
 
         layers.append(output)
 
