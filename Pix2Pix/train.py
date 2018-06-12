@@ -118,6 +118,9 @@ def load_data(data_dir=None):
         img = misc.imread(path)
         images.append(img)
 
+    input_paths = np.asarray(input_paths)
+    images = np.asarray(images)
+
     print('\nlen(input_paths): {}'.format(input_paths))
     print('\ninput_paths: {}'.format(input_paths))
 
@@ -667,6 +670,10 @@ def train():
 
         for step in range(max_steps):
             idx = step % 118
+            if idx == 0:
+                shuffle_indices = np.random.permutation(np.arange(len(train_data)))
+                train_data = train_data[shuffle_indices]
+                train_paths = train_paths[shuffle_indices]
 
             def should(freq):
                 return freq > 0 and ((step + 1) % freq == 0 or step == max_steps - 1)

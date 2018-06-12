@@ -5,6 +5,7 @@ Networks for GAN Pix2Pix.
 2. Hinge loss.
 3. Spectral Normalization in D only.
 
+4. D's output is [N, 30, 30, 1]
 """
 
 # import os
@@ -42,43 +43,47 @@ def norm_layer(inputs, decay=0.9, epsilon=1e-5, is_training=True, norm_type="BN"
     return outputs
 
 
-def Self_Attn(x, in_dim=64, imsize=16, pixel_wise=True):
+def Self_Attn(x, pixel_wise=True):
     """
 
     Args:
       x: [b_size, f_size, f_size, in_dim]
       pixel_wise:
-
-      attn_score: [batch_size, feature_size, feature_size]
     Return:
-      [batch_size, feature_depth, feature_size, feature_size]
+      [batch_size, in_dim, W, H]
     """
 
     b_size = x.shape.as_list()[0]
     # f_size = x.shape.as_list()[1]
     H = x.shape.as_list()[1]
     W = x.shape.as_list()[2]
+    in_dim = x.shape.as_list()[-1]
 
     gamma = tf.get_variable(name='gamma', shape=[1], dtype=tf.float32, initializer=tf.zeros_initializer())
 
     if pixel_wise:
-        # [N, H, W, int(in_dim / 8)*imsize*imsize]
+        # [N, H, W, in_dim // 8]
         f_x = \
-            lib.ops.conv2d.Conv2D(x, x.shape.as_list[-1], int(in_dim / 8) * (imsize ** 2),
+            lib.ops.conv2d.Conv2D(x, x.shape.as_list[-1], in_dim // 8,
                                   filter_size=1, stride=1,
                                   name='Conv2D.f_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
                                   spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
                                   mask_type=None, weightnorm=None, biases=True, gain=1.)
-        f_x = tf.transpose(f_x, [0, 3, 1, 2])  # [N, int(in_dim / 8)*imsize*imsize, H, W]
+        f_x = tf.transpose(f_x, [0, 2, 1, 3])  # [N, W, H, in_dim // 8]
+        f_ready = tf.reshape(f_x, [b_size, W * H, -1])  # [N, W*H, in_dim // 8]
 
-        # [N, H, W, int(in_dim / 8)*imsize*imsize]
+        # [N, H, W, in_dim // 8]
         g_x = \
-            lib.ops.conv2d.Conv2D(x, x.shape.as_list()[-1], int(in_dim / 8) * (imsize ** 2),
+            lib.ops.conv2d.Conv2D(x, x.shape.as_list()[-1], in_dim // 8,
                                   filter_size=1, stride=1,
                                   name='Conv2D.g_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
                                   spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
                                   mask_type=None, weightnorm=None, biases=True, gain=1.)
-        g_x = tf.transpose(g_x, [0, 3, 1, 2])  # [N, int(in_dim / 8)*imsize*imsize, H, W]
+        g_x = tf.transpose(g_x, [0, 3, 2, 1])  # [N, in_dim // 8, W, H]
+        g_ready = tf.reshape(g_x, [b_size, -1, H * W])  # [N, in_dim // 8, W*H]
+
+        energy = tf.matmul(f_ready, g_ready)  # [N, W*H, W*H]
+        attention = tf.nn.softmax(energy, axis=-1)  # [N, W*H, W*H]
 
         # [N, H, W, in_dim]
         h_x = \
@@ -86,37 +91,16 @@ def Self_Attn(x, in_dim=64, imsize=16, pixel_wise=True):
                                   name='Conv2D.h_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
                                   spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
                                   mask_type=None, weightnorm=None, biases=True, gain=1.)
-        h_x = tf.transpose(h_x, [0, 3, 1, 2])  # [N, in_dim, H, W]
-        # [N, in_dim, H*W, H, W]
-        h_x = tf.tile(tf.expand_dims(h_x, axis=2), [1, 1, H * W, 1, 1])
-        # [N, in_dim, H*W, H*W]
-        h_x = tf.reshape(h_x, [b_size, -1, H * W, H * W])
+        h_x = tf.transpose(h_x, [0, 3, 2, 1])  # [N, in_dim, W, H]
+        h_x = tf.reshape(h_x, [b_size, -1, W * H])  # [N, in_dim, W*H]
 
-        # [N, int(in_dim / 8)*imsize*imsize, H, W] --> [N, x, H*W, W, H]
-        f_ready = tf.reshape(f_x, [b_size, -1, H * W, H, W])
-        f_ready = tf.transpose(f_ready, [0, 1, 2, 4, 3])
+        out = tf.matmul(h_x, tf.transpose(attention, [0, 1, 2]))
+        out = out.view(b_size, in_dim, W, H)  # [N, in_dim, W, H]
+        out = tf.transpose(out, [0, 3, 2, 1])  # [N, H, W, in_dim]
 
-        # [N, int(in_dim / 8)*imsize*imsize, H, W] --> [N, x, H*W, H, W]
-        g_ready = tf.reshape(g_x, [b_size, -1, H * W, H, W])
+        self_attn_map = gamma * out + x
 
-        # [N * H*W, H*W]
-        attn_dist = tf.reshape(
-            tf.reduce_sum(tf.multiply(f_ready, g_ready), axis=1), (-1, H * W))
-        # [N, H*W, H*W]
-        attn_soft = tf.reshape(
-            tf.nn.softmax(attn_dist, axis=1), (b_size, H * W, H * W))
-        # [N, 1, H*W, H*W]
-        attn_score = tf.expand_dims(attn_soft, axis=1)
-
-        # [N, in_dim, H, W]
-        self_attn_map = tf.reshape(
-            tf.reduce_sum(tf.multiply(h_x, attn_score), axis=3), [b_size, -1, H, W])
-        # [N, H, W, in_dim]
-        self_attn_map = tf.transpose(self_attn_map, [0, 2, 3, 1])
-
-        self_attn_map = gamma * self_attn_map + x
-
-        return self_attn_map, attn_score
+        return self_attn_map, attention
 
 
 def resnet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type, channel_multiplier, padding):
@@ -491,7 +475,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
 
 def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, update_collection,
                        conv_type, channel_multiplier, padding):
-    n_layers = 5
+    n_layers = 4
     layers = []
 
     # 2x [batch, height, width, in_channels] => [batch, height, width, in_channels * 2]
@@ -514,13 +498,11 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
     # layer_2: [batch, 256, 256, ndf] => [batch, 128, 128, ndf * 2]
     # layer_3: [batch, 128, 128, ndf * 2] => [batch, 64, 64, ndf * 4]
     # layer_4: [batch, 64, 64, ndf * 4] => [batch, 32, 32, ndf * 8]
-    # layer_5: [batch, 32, 32, ndf * 4] => [batch, 16, 16, ndf * 8]
-    # layer_6: [batch, 16, 16, ndf * 4] => [batch, 8, 8, ndf * 8]
+    # layer_5: [batch, 32, 32, ndf * 4] => [batch, 31, 31, ndf * 8]
     for i in range(n_layers):
         with tf.variable_scope("layer_%d" % (len(layers) + 1)):
             out_channels_ = ndf * min(2 ** (i + 1), 8)
-            # stride = 1 if i == n_layers - 1 else 2  # last layer here has stride 1
-            stride = 2  # last layer here has stride 1
+            stride = 1 if i == n_layers - 1 else 2  # last layer here has stride 1
             padded_input = tf.pad(layers[-1], [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
             convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], out_channels_, 4, stride,
                                               'Conv2D',
@@ -537,10 +519,10 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
 
             layers.append(rectified)
 
-    # layer_7: [batch, 8, 8, ndf * 8] => [batch, 7, 7, ndf * 2]
+    # layer_6: [batch, 31, 31, ndf * 8] => [batch, 30, 30, 1]
     with tf.variable_scope("layer_%d" % (len(layers) + 1)):
         padded_input = tf.pad(rectified, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
-        convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], ndf * 2, 4, 1,
+        convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], 1, 4, 1,
                                           'Conv2D',
                                           conv_type=conv_type, channel_multiplier=channel_multiplier, padding=padding,
                                           spectral_normed=spectral_normed,
@@ -549,17 +531,6 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
                                           he_init=True, biases=True)
         # output = tf.sigmoid(convolved)
         output = convolved
-
-        layers.append(output)
-
-    # layer_8: [batch, 7, 7, ndf * 2] => [batch, 1]
-    with tf.variable_scope("layer_%d" % (len(layers) + 1)):
-        output = nonlinearity(output, 'lrelu', 0.2)
-        output = tf.reduce_mean(output, axis=[1, 2])
-        output = lib.ops.linear.Linear(output, output.shape.as_list()[-1], 1, 'D.Output',
-                                       spectral_normed=spectral_normed,
-                                       update_collection=update_collection)
-        output = tf.reshape(output, [-1])
 
         layers.append(output)
 

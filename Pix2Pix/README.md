@@ -16,7 +16,7 @@ Heavily based on code (affinelayer/pix2pix-tensorflow)[https://github.com/affine
 # train
 # cd to `Pix2Pix` folder and run command bellow
 ---- webpage, 2A ----
-CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
+CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='train' \
   --conv_type='conv2d' \
@@ -43,7 +43,7 @@ CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
 
 
 # infer
-CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
+CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='test' \
   --conv_type='conv2d' \
