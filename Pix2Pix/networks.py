@@ -53,8 +53,7 @@ def Self_Attn(x, pixel_wise=True):
       [batch_size, in_dim, W, H]
     """
 
-    b_size = x.shape.as_list()[0]
-    # f_size = x.shape.as_list()[1]
+    N = x.shape.as_list()[0]
     H = x.shape.as_list()[1]
     W = x.shape.as_list()[2]
     in_dim = x.shape.as_list()[-1]
@@ -69,8 +68,7 @@ def Self_Attn(x, pixel_wise=True):
                                   name='Conv2D.f_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
                                   spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
                                   mask_type=None, weightnorm=None, biases=True, gain=1.)
-        f_x = tf.transpose(f_x, [0, 2, 1, 3])  # [N, W, H, in_dim // 8]
-        f_ready = tf.reshape(f_x, [b_size, W * H, -1])  # [N, W*H, in_dim // 8]
+        f_ready = tf.reshape(f_x, [N, H * W, -1])  # [N, H*W, in_dim // 8]
 
         # [N, H, W, in_dim // 8]
         g_x = \
@@ -79,11 +77,11 @@ def Self_Attn(x, pixel_wise=True):
                                   name='Conv2D.g_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
                                   spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
                                   mask_type=None, weightnorm=None, biases=True, gain=1.)
-        g_x = tf.transpose(g_x, [0, 3, 2, 1])  # [N, in_dim // 8, W, H]
-        g_ready = tf.reshape(g_x, [b_size, -1, H * W])  # [N, in_dim // 8, W*H]
+        g_x = tf.transpose(g_x, [0, 3, 1, 2])  # [N, in_dim // 8, H, W]
+        g_ready = tf.reshape(g_x, [N, -1, H * W])  # [N, in_dim // 8, H*W]
 
-        energy = tf.matmul(f_ready, g_ready)  # [N, W*H, W*H]
-        attention = tf.nn.softmax(energy, axis=-1)  # [N, W*H, W*H]
+        energy = tf.matmul(f_ready, g_ready)  # [N, H*W, H*W]
+        attention = tf.nn.softmax(energy, axis=-1)  # [N, H*W, H*W]
 
         # [N, H, W, in_dim]
         h_x = \
@@ -91,12 +89,13 @@ def Self_Attn(x, pixel_wise=True):
                                   name='Conv2D.h_x', conv_type='conv2d', channel_multiplier=0, padding='SAME',
                                   spectral_normed=False, update_collection=None, inputs_norm=False, he_init=True,
                                   mask_type=None, weightnorm=None, biases=True, gain=1.)
-        h_x = tf.transpose(h_x, [0, 3, 2, 1])  # [N, in_dim, W, H]
-        h_x = tf.reshape(h_x, [b_size, -1, W * H])  # [N, in_dim, W*H]
+        h_x = tf.transpose(h_x, [0, 3, 1, 2])  # [N, in_dim, H, W]
+        h_x = tf.reshape(h_x, [N, -1, H * W])  # [N, in_dim, H*W]
 
-        out = tf.matmul(h_x, tf.transpose(attention, [0, 1, 2]))
-        out = out.view(b_size, in_dim, W, H)  # [N, in_dim, W, H]
-        out = tf.transpose(out, [0, 3, 2, 1])  # [N, H, W, in_dim]
+        out = tf.matmul(h_x, attention)
+        # out = tf.matmul(h_x, tf.transpose(attention, [0, 1, 2]))
+        out = out.view(N, in_dim, H, W)  # [N, in_dim, W, H]
+        out = tf.transpose(out, [0, 2, 3, 1])  # [N, H, W, in_dim]
 
         self_attn_map = gamma * out + x
 
@@ -363,7 +362,7 @@ def unet_generator(generator_inputs, generator_outputs_channels, ngf, conv_type,
 
     # encoder_1: [batch, 512, 512, in_channels] => [batch, 256, 256, ngf]
     with tf.variable_scope("encoder_1"):
-        output = lib.ops.conv2d.Conv2D(generator_inputs, 6, ngf, 4, 2, 'Conv2D',
+        output = lib.ops.conv2d.Conv2D(generator_inputs, generator_inputs.shape.as_list()[-1], ngf, 4, 2, 'Conv2D',
                                        conv_type=conv_type, channel_multiplier=channel_multiplier, padding=padding,
                                        spectral_normed=False, update_collection=None, inputs_norm=False,
                                        he_init=True, biases=True)
@@ -484,7 +483,7 @@ def unet_discriminator(discrim_inputs, discrim_targets, ndf, spectral_normed, up
     # layer_1: [batch, 512, 512, in_channels * 2] => [batch, 256, 256, ndf]
     with tf.variable_scope("layer_1"):
         padded_input = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
-        convolved = lib.ops.conv2d.Conv2D(padded_input, 9, ndf, 4, 2,
+        convolved = lib.ops.conv2d.Conv2D(padded_input, padded_input.shape.as_list()[-1], ndf, 4, 2,
                                           'Conv2D',
                                           conv_type=conv_type, channel_multiplier=channel_multiplier, padding=padding,
                                           spectral_normed=spectral_normed,

@@ -15,6 +15,7 @@ import random
 import json
 import time
 from scipy import misc
+import imageio
 
 sys.path.append(os.getcwd())
 
@@ -121,12 +122,12 @@ def load_data(data_dir=None):
     input_paths = np.asarray(input_paths)
     images = np.asarray(images)
 
-    print('\nlen(input_paths): {}'.format(input_paths))
-    print('\ninput_paths: {}'.format(input_paths))
-
-    print('\nlen(images): {}'.format(len(images)))
-    print('\nimages[0].shape: {}'.format(images[0].shape))
-    print('\nimages[0]: {}'.format(images[0]))
+    # print('\nlen(input_paths): {}'.format(len(input_paths)))
+    # print('input_paths: {}'.format(input_paths))
+    #
+    # print('\nlen(images): {}'.format(len(images)))
+    # print('images[0].shape: {}'.format(images[0].shape))
+    # print('images[0]: {}'.format(images[0]))
 
     return images, input_paths
 
@@ -276,19 +277,24 @@ def save_images(fetches, step=None):
         os.makedirs(image_dir)
 
     filesets = []
-    for i, in_path in enumerate(fetches["paths"]):
-        name, _ = os.path.splitext(os.path.basename(in_path.decode("utf8")))
-        fileset = {"name": name, "step": step}
-        for kind in ["inputs", "outputs", "targets"]:
-            filename = name + "-" + kind + ".png"
-            if step is not None:
-                filename = "%08d-%s" % (step, filename)
-            fileset[kind] = filename
-            out_path = os.path.join(image_dir, filename)
-            contents = fetches[kind][i]
-            with open(out_path, "wb") as f:
-                f.write(contents)
-        filesets.append(fileset)
+    in_path = np.array2string(fetches["paths"])
+    # print('\nin_path: {}'.format(in_path))
+    # for i, in_path in enumerate(fetches["paths"]):
+    name, _ = os.path.splitext(os.path.basename(in_path))
+    fileset = {"name": name, "step": step}
+    for kind in ["inputs", "outputs", "targets"]:
+        filename = name + "-" + kind + ".png"
+        if step is not None:
+            filename = "%08d-%s" % (step, filename)
+        fileset[kind] = filename
+        out_path = os.path.join(image_dir, filename)
+        contents = fetches[kind][0]
+        # print('\ncontents.shape: {}'.format(contents.shape))
+        # print('contents: {}'.format(contents))
+        with open(out_path, "wb") as f:
+            f.write(contents)
+    filesets.append(fileset)
+
     return filesets
 
 
@@ -353,7 +359,7 @@ def load_examples(raw_input, input_paths):
             raw_input = tf.identity(raw_input)
 
         # raw_input.set_shape([None, None, None, 3])
-        print('\nraw_input.shape: {}'.format(raw_input.shape.as_list()))
+        # print('\nraw_input.shape: {}'.format(raw_input.shape.as_list()))
 
         if args.lab_colorization:
             # load color and brightness from image, no B image exists here
@@ -363,9 +369,9 @@ def load_examples(raw_input, input_paths):
             b_images = tf.stack([a_chan, b_chan], axis=2)
         else:
             # break apart image pair and move to range [-1, 1]
-            height = tf.shape(raw_input)[0]  # [height, width, channels]
-            width = tf.shape(raw_input)[1]  # [height, width, channels]
-            channels = tf.shape(raw_input)[2]  # [height, width, channels]
+            height = raw_input.shape.as_list()[0]  # [height, width, channels]
+            width = raw_input.shape.as_list()[1]  # [height, width, channels]
+            channels = raw_input.shape.as_list()[2]  # [height, width, channels]
 
             if args.multiple_A:
                 # for concat features
@@ -576,10 +582,12 @@ def train():
     for k, v in args._get_kwargs():
         print(k, "=", v)
 
-    raw_input = tf.placeholder(shape=[768, 4080, 3], name='raw_input', dtype=tf.int32)
+    raw_input = tf.placeholder(shape=[768, 4080, 3], name='raw_input', dtype=tf.uint8)
     input_paths = tf.placeholder(shape=None, name='input_paths', dtype=tf.string)
 
     examples = load_examples(raw_input, input_paths)
+    # print('\n587.examples.inputs.shape: {}'.format(examples.inputs.shape.as_list()))
+    # print('588.examples.targets.shape: {}'.format(examples.targets.shape.as_list()))
 
     max_steps = 2 ** 32
     if args.max_epochs is not None:
@@ -612,6 +620,10 @@ def train():
         targets = deprocess(examples.targets)
         outputs = deprocess(modelNamedtuple.outputs)
 
+        # print('\n----621.inputs.shape----: {}\n'.format(inputs.shape.as_list()))
+        # print('----622.stargets.shape----: {}\n'.format(targets.shape.as_list()))
+        # print('----623.outputs.shape----: {}\n'.format(outputs.shape.as_list()))
+
     def convert(image):
         if args.aspect_ratio != 1.0:
             # upscale to correct aspect ratio
@@ -630,11 +642,15 @@ def train():
     with tf.name_scope("convert_outputs"):
         converted_outputs = convert(outputs)
 
+    # print('\n----643.converted_inputs.shape----: {}\n'.format(converted_inputs.shape.as_list()))
+    # print('----644.converted_targets.shape----: {}\n'.format(converted_targets.shape.as_list()))
+    # print('----645.converted_outputs.shape----: {}\n'.format(converted_outputs.shape.as_list()))
+
     with tf.name_scope("encode_images"):
         if args.multiple_A:
             # channels = converted_inputs.shape.as_list()[3]
             converted_inputs = tf.split(converted_inputs, 2, 3)[1]
-            print('\n----642----: {}\n'.format(converted_inputs.shape.as_list()))
+            # print('\n----642.converted_inputs.shape----: {}\n'.format(converted_inputs.shape.as_list()))
 
         display_fetches = {
             "paths": examples.paths,
@@ -642,6 +658,13 @@ def train():
             "targets": tf.map_fn(tf.image.encode_png, converted_targets, dtype=tf.string, name="target_pngs"),
             "outputs": tf.map_fn(tf.image.encode_png, converted_outputs, dtype=tf.string, name="output_pngs"),
         }
+
+        # display_fetches = {
+        #     "paths": examples.paths,
+        #     "inputs": converted_inputs,
+        #     "targets": converted_targets,
+        #     "outputs": converted_outputs,
+        # }
 
     # with tf.name_scope("summary_loss"):
     #     tf.summary.scalar("discriminator_loss", modelNamedtuple.discrim_loss)
@@ -734,7 +757,7 @@ def train():
                 args.flip = False
 
                 s = time.time()
-                max_steps = min(examples.steps_per_epoch, max_steps)
+                max_steps = len(val_data)
                 for step in range(max_steps):
                     results = sess.run(display_fetches,
                                        feed_dict={raw_input: val_data[step],

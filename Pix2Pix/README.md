@@ -16,7 +16,7 @@ Heavily based on code (affinelayer/pix2pix-tensorflow)[https://github.com/affine
 # train
 # cd to `Pix2Pix` folder and run command bellow
 ---- webpage, 2A ----
-CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
+CUDA_VISIBLE_DEVICES=1 python Pix2Pix/train.py \
   --batch_size=1 \
   --mode='train' \
   --conv_type='conv2d' \
@@ -28,7 +28,7 @@ CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --loss_type='HINGE' \
   --n_dis=5 \
   --input_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/train_resized \
-  --output_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train_trainval \
+  --output_dir=/mnt/data/ILSVRC2012/webpageSaliency/output_train_trainval_D_N_30_30_1 \
   --max_epochs=400 \
   --which_direction=AtoB \
   --save_freq=2360 \
@@ -41,6 +41,8 @@ CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
   --upsampe_method=depth_to_space \
   --val_dir=/home/yhx/webpageSaliency/train_data/pix2pix_data_2A/val_resized
 
+
+2360
 
 # infer
 CUDA_VISIBLE_DEVICES=0 python Pix2Pix/train.py \
