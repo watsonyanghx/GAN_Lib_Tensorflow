@@ -159,7 +159,7 @@ def ResidualBlock(inputs, input_dim, output_dim, filter_size, name,
 def OptimizedResBlockDisc1(inputs, DIM_D=128, activation_fn='relu',
                            spectral_normed=False, update_collection=None, inputs_norm=False,
                            biases=True):
-    conv_1 = functools.partial(lib.ops.conv2d.Conv2D, input_dim=3, output_dim=DIM_D)
+    conv_1 = functools.partial(lib.ops.conv2d.Conv2D, input_dim=inputs.shape.as_list()[-1], output_dim=DIM_D)
     conv_2 = functools.partial(ConvMeanPool, output_dim=DIM_D)
     conv_shortcut = MeanPoolConv
     shortcut = conv_shortcut(inputs=inputs, output_dim=DIM_D, filter_size=1, name='D.DownBlock.1.Shortcut',
