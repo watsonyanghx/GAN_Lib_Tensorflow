@@ -44,6 +44,6 @@ Inception scores are calculated by average of 10 evaluation with 5000 samples.
     ![sample](https://github.com/watsonyanghx/GAN_Lib_Tensorflow/blob/master/ACGAN/img/samples.png)
 
 
-## Refrence
+## Reference
 
 - [https://wiseodd.github.io/](https://wiseodd.github.io/)
